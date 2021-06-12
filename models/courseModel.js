@@ -14,7 +14,7 @@ const courseSchema = new mongoose.Schema(
     
     courseWeeks: {type: Array,
         weekName: { type: String},
-        classroomID: { type: String},
+        classroomDataID: { type: String},
     }
   },
   {

@@ -32,7 +32,7 @@ courseRouter.post(
     const { courseDataID, studentName, studentGoogleName, studentID } = req.body;
     const course = await Course.findById(courseDataID);
     if (course) {
-      var studentExisted = false;
+      let studentExisted = false;
       course.classmates.forEach((element) => {
         if (element.studentID == studentID) studentExisted = true;
       });
@@ -77,8 +77,8 @@ courseRouter.post(
     const { courseDataID, studentID } = req.body;
     const course = await Course.findById(courseDataID);
     if (course) {
-      var studentIndex = null;
-      for (var i = 0; i < course.classmates.length; i++)
+      let studentIndex = null;
+      for (let i = 0; i < course.classmates.length; i++)
         if (course.classmates[i].studentID == studentID) studentIndex = i;
 
       if (studentIndex != null) {
@@ -104,8 +104,8 @@ courseRouter.post(
       //確認更改後學號是否重複
       if (studentID) {
         //確認更改後學號是否重複
-        var studentIDExisted = false;
-        for (var i = 0; i < course.classmates.length; i++) {
+        let studentIDExisted = false;
+        for (let i = 0; i < course.classmates.length; i++) {
           if ( i != studentIndex && course.classmates[i].studentID == studentID) {
             studentIDExisted = true;
           }
@@ -135,12 +135,33 @@ courseRouter.post(
   })
 );
 
+//用來自動允許學生加入google meet
+courseRouter.post(
+  "/checkStudentInList",
+  expressAsyncHandler(async (req, res) => {
+    const { courseDataID, studentGoogleName } = req.body;
+    const course = await Course.findById(courseDataID);
+    if (course) {
+        //確認更改後學號是否重複
+        let studentInList = false;
+        for (let i = 0; i < course.classmates.length; i++) {
+          if ( course.classmates[i].studentGoogleName == studentGoogleName) {
+            studentInList = true;
+          }
+        }
+        res.send(studentInList);
+    } else {
+      res.send("尚無此堂課程");
+    }
+  })
+);
+
 function ClassmatesSorting(ClassmateDataArray) {
-  var storage;
+  let storage;
   //console.log(ClassmateDataArray)
-  for (var i = 0; i < ClassmateDataArray.length; i++) {
-    var minIndex = i;
-    for (var j = i + 1; j < ClassmateDataArray.length; j++) {
+  for (let i = 0; i < ClassmateDataArray.length; i++) {
+    let minIndex = i;
+    for (let j = i + 1; j < ClassmateDataArray.length; j++) {
       if (parseInt(ClassmateDataArray[minIndex].studentID) > parseInt(ClassmateDataArray[j].studentID)) {
         minIndex = j;
       }
@@ -157,30 +178,30 @@ function ClassmatesSorting(ClassmateDataArray) {
 //#endregion ==========學生名單設定部分==========
 
 
-//#region ==========課程周設定部分==========
+//#region ==========課程週設定部分==========
 
 courseRouter.post(
-  "/addCourseWeek",
+  "/linkClassroomToCourseWeek",
   expressAsyncHandler(async (req, res) => {
-    const { courseDataID, weekName, classroomID } = req.body;
+    const { courseDataID, classroomDataID } = req.body;
     const course = await Course.findById(courseDataID);
     if (course) {
-      if(!weekName) res.send("缺少課程周名稱");
-
-      var weekNameExisted = false;
-      course.courseWeeks.forEach((element) => {
-        if (element.weekName == weekName) weekNameExisted = true;
-      });
-
-      if (weekNameExisted == true) res.send("此課程周名已存在");
-      else {
+      const classroom = await Classroom.findById(classroomDataID);
+      if(classroom){
+        newTime = new Date();
         course.courseWeeks.push({
-          weekName: weekName,
-          classroomID: classroomID || ""
+          weekName: newTime.getFullYear() + "/" + (newTime.getMonth()+1) + "/" + newTime.getDate(),
+          classroomDataID: classroomDataID
         });
-
         const uploadedCourse = await course.save();
-        res.send(uploadedCourse.courseWeeks);
+
+        classroom.courseName = course.courseName;
+        classroom.isLinkToCourse = true;
+        const uploadedClassroom = await classroom.save();
+
+        res.send("新增週次並連結課堂Date完成");
+      }else{
+        res.send("尚無此教室");
       }
     } else {
       res.send("尚無此堂課程");
@@ -194,9 +215,15 @@ courseRouter.post(
     const { courseDataID } = req.body;
     const course = await Course.findById(courseDataID);
     if (course) {
+
+      course.courseWeeks.forEach(element => {
+        //未完成，刪除classroom Data
+      });
+
       course.courseWeeks = [];
       const uploadedCourse = await course.save();
-      res.send(uploadedCourse.courseWeeks);
+
+      res.send("刪除完成");
     } else {
       res.send("尚無此堂課程");
     }
@@ -206,63 +233,61 @@ courseRouter.post(
 courseRouter.post(
   "/deleteOneCourseWeek",
   expressAsyncHandler(async (req, res) => {
-    const { courseDataID, weekName } = req.body;
+    const { courseDataID, courseWeekIndex } = req.body;
     const course = await Course.findById(courseDataID);
     if (course) {
-      var courseWeekIndex = null;
-      for (var i = 0; i < course.courseWeeks.length; i++)
-        if (course.courseWeeks[i].weekName == weekName) courseWeekIndex = i;
 
       if (courseWeekIndex != null) {
+        //未完成，刪除指定classroom Data
         course.courseWeeks.splice(courseWeekIndex, 1);
       } else {
-        res.send("此課程周名不存在");
+        res.send("請指定courseWeekIndex");
       }
 
       const uploadedCourse = await course.save();
-      res.send(uploadedCourse.courseWeeks);
+      res.send("刪除完成");
     } else {
       res.send("尚無此堂課程");
     }
   })
 );
 
-courseRouter.post(
-  "/editOneCourseWeek",
-  expressAsyncHandler(async (req, res) => {
-    const { courseDataID, courseWeekIndex, weekName, classroomID } = req.body;
-    const course = await Course.findById(courseDataID);
-    if (course) {
-      //確認更改後學號是否重複
-      if (weekName) {
-        //確認更改後學號是否重複
-        var weekNameExisted = false;
-        for (var i = 0; i < course.courseWeeks.length; i++) {
-          if ( i != courseWeekIndex && course.courseWeeks[i].weekName == weekName) {
-            weekNameExisted = true;
-          }
-        }
-        if (weekNameExisted == true) {
-          res.send("此課程周名已存在");
-        }
-      }
+// courseRouter.post(
+//   "/editOneCourseWeek",
+//   expressAsyncHandler(async (req, res) => {
+//     const { courseDataID, courseWeekIndex, weekName, classroomMeetID } = req.body;
+//     const course = await Course.findById(courseDataID);
+//     if (course) {
+//       //確認更改後學號是否重複
+//       if (weekName) {
+//         //確認更改後學號是否重複
+//         let weekNameExisted = false;
+//         for (let i = 0; i < course.courseWeeks.length; i++) {
+//           if ( i != courseWeekIndex && course.courseWeeks[i].weekName == weekName) {
+//             weekNameExisted = true;
+//           }
+//         }
+//         if (weekNameExisted == true) {
+//           res.send("此課程週名已存在");
+//         }
+//       }
 
-      //取代資料。注意，無法直接設定course.courseWeeks[courseWeekIndex]內的物件，必須取代一整個Object
-      const newDate = {
-        weekName: weekName || course.courseWeeks[courseWeekIndex].weekName,
-        classroomID: classroomID || course.courseWeeks[courseWeekIndex].classroomID
-      }
-      course.courseWeeks.splice(courseWeekIndex, 1, newDate);
+//       //取代資料。注意，無法直接設定course.courseWeeks[courseWeekIndex]內的物件，必須取代一整個Object
+//       const newDate = {
+//         weekName: weekName || course.courseWeeks[courseWeekIndex].weekName,
+//         classroomMeetID: classroomMeetID || course.courseWeeks[courseWeekIndex].classroomMeetID
+//       }
+//       course.courseWeeks.splice(courseWeekIndex, 1, newDate);
 
-      const uploadedCourse = await course.save();
-      res.send(uploadedCourse.courseWeeks);
+//       const uploadedCourse = await course.save();
+//       res.send(uploadedCourse.courseWeeks);
       
-    } else {
-      res.send("尚無此堂課程");
-    }
-  })
-);
+//     } else {
+//       res.send("尚無此堂課程");
+//     }
+//   })
+// );
 
-//#endregion==========課程周設定部分==========
+//#endregion==========課程週設定部分==========
 
 module.exports = courseRouter;

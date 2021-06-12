@@ -1,135 +1,123 @@
 const express = require("express");
 const expressAsyncHandler = require("express-async-handler");
-const Classmate = require("../models/studentModel");
 const Classroom = require("../models/classroomModel");
 const studentRouter = express.Router();
 const { response } = require("express");
 
 studentRouter.post(
-  "/startClass",
+  "/enterClassroom",
   expressAsyncHandler(async (req, res) => {
-    const { classroomID, studentName, studentID } = req.body;
+    const { classroomMeetID, studentName, studentID } = req.body;
 
-    var studentDataID = "";
+    newTime = new Date();
+    const classroom = await Classroom.findOne({
+      'classroomMeetID': classroomMeetID
+    }).sort({$natural:-1});
 
-    const classmate = await Classmate.findOne({ studentName });
-
-    if(classmate){
-      studentDataID = classmate.id;
-      if(classmate.lastedClassroom !== classroomID){
-        classmate.newConcernDegree = 0;
-        classmate.concernDegreeArray = [];
-        classmate.timeLineArray = [];
-        classmate.lastedClassroom = classroomID;
-        await classmate.save();
+    if(classroom){
+      let indexInList = classroom.classmates.findIndex(element => (element.studentName == studentName && element.studentID == studentID));
+      if(indexInList == -1){
+        const newClassmate = {
+          studentName:studentName,
+          studentID: studentID,
+          rollcall: new Array(),
+          personalLeave: false,
+          newConcernDegree: 0,
+          concernDegreeArray: new Array(),
+          timeLineArray: new Array()
+        };
+        classroom.classmates.push(newClassmate);
+        const uploadedClassroom = await classroom.save();
+        res.send({
+          "classroomDataID": classroom._id,
+          "indexInList":uploadedClassroom.classmates.length-1
+        });
+      }else{
+        res.send({
+          "classroomDataID": classroom._id,
+          "indexInList":indexInList
+        });
       }
+    }else{
+      res.send("此教室尚未開啟");
     }
-    else{
-      const newClassmate = new Classmate({
-        studentName:studentName,
-        studentID: studentID,
-        newConcernDegree: 0,
-        concernDegreeArray: new Array(),
-        timeLineArray: new Array(),
-        lastedClassroom: classroomID
-      });
-      const createdClassmate = await newClassmate.save();
-      studentDataID = createdClassmate.id;
-    }
-
-    const classroom = await Classroom.findOne({ classroomID });
-    if (classroom) {
-      if (
-        !classroom.studentDataIDList.find(
-          (element) => element === studentDataID
-        )
-      ) {
-        classroom.studentDataIDList.push(studentDataID);
-      }
-      const updatedClassroom = await classroom.save();
-    } else {
-      const newClassroom = new Classroom({
-        classroomID: classroomID,
-      });
-      newClassroom.studentDataIDList.push(studentDataID);
-      const updatedClassroom = await newClassroom.save();
-    }
-
-    res.send(studentDataID);
   })
 );
-
 
 studentRouter.put(
-  "/update",
+  "/upload",
   expressAsyncHandler(async (req, res) => {
-    const {classroomID, DataID, concernDegree, time,} = req.body;
-    const classroom = await Classroom.findOne({ classroomID });
+    const { classroomDataID, indexInList, concernDegree } = req.body;
+    const classroom = await Classroom.findById(classroomDataID);
 
-    if (classroom && classroom.isClassing === true) {
-      const classmate = await Classmate.findById(DataID);
-      if (classmate) {
-        classmate.newConcernDegree = concernDegree;
-        classmate.concernDegreeArray.push(concernDegree);
-        classmate.timeLineArray.push(time);
+    if(classroom){
+      if(classroom.isClassing == false) res.send("課程尚未開始");
+      else if(classroom.isResting == true) res.send("下課休息時間");
+      else{
+        let updateClassmate = classroom.classmates[indexInList];
 
-        const updatedClassmate = await classmate.save();
-        res.send("資料上傳成功");
-      } else {
-        res.send("無此學生，請確認姓名學號是否正確");
+        updateClassmate.newConcernDegree = concernDegree;
+        updateClassmate.concernDegreeArray.push(concernDegree);
+        newTime = new Date();
+        updateClassmate.timeLineArray.push(newTime.getHours() + ":" + newTime.getMinutes());
+
+        classroom.classmates.splice(indexInList, 1, updateClassmate);
+
+        const updatedClassroom = await classroom.save();
+        res.send("上傳成功");
       }
-    } else {
-      res.send("此課堂尚未開始");
+    }else{
+      res.send("無此課堂教室");
     }
   })
 );
 
-studentRouter.post(
-  "/getPersonConcernDiagram",
-  expressAsyncHandler(async (req, res) => {
-    const { classroomID, DataID, timeSpacing } = req.body;
-    var newConcernArray = new Array;
-    var concernAdder = 0;
-    var newTimeArray = new Array;
-    var dataCount = 0;
-    var dataMax = timeSpacing;
+// studentRouter.post(
+//   "/getPersonConcernDiagram",
+//   expressAsyncHandler(async (req, res) => {
+//     const { classroomMeetID, DataID, timeSpacing } = req.body;
+//     let newConcernArray = new Array;
+//     let concernAdder = 0;
+//     let newTimeArray = new Array;
+//     let dataCount = 0;
+//     let dataMax = timeSpacing;
 
-    const classmate = await Classmate.findById(DataID);
+//     const classmate = await Classmate.findById(DataID);
     
-    for (var i = 0; i < classmate.concernDegreeArray.length; i++) {
-      if (dataCount < dataMax) {
-        concernAdder += (Number)(classmate.concernDegreeArray[i]);
-        dataCount += 1;
-      }
-      if (dataCount >= dataMax || i >= (classmate.concernDegreeArray.length - 1)) {
+//     for (let i = 0; i < classmate.concernDegreeArray.length; i++) {
+//       if (dataCount < dataMax) {
+//         concernAdder += (Number)(classmate.concernDegreeArray[i]);
+//         dataCount += 1;
+//       }
+//       if (dataCount >= dataMax || i >= (classmate.concernDegreeArray.length - 1)) {
 
-        var judgedConcern = 0;
-        if ((concernAdder / dataCount) > 1) judgedConcern = 1;
-        else if ((concernAdder / dataCount) < 0) judgedConcern = 0;
-        else judgedConcern = (Math.round((concernAdder / dataCount) * 10)) / 10;
+//         let judgedConcern = 0;
+//         if ((concernAdder / dataCount) > 1) judgedConcern = 1;
+//         else if ((concernAdder / dataCount) < 0) judgedConcern = 0;
+//         else judgedConcern = (Math.round((concernAdder / dataCount) * 10)) / 10;
 
-        newConcernArray.push(judgedConcern);
-        newTimeArray.push(classmate.timeLineArray[i]);
-        dataCount = 0;
-        concernAdder = 0;
-      }
-    }
+//         newConcernArray.push(judgedConcern);
+//         newTimeArray.push(classmate.timeLineArray[i]);
+//         dataCount = 0;
+//         concernAdder = 0;
+//       }
+//     }
 
-    res.send({
-      "studentName": classmate.studentName,
-      "concernArray": newConcernArray,
-      "timeLineArray": newTimeArray
-    });
-  })
-)
+//     res.send({
+//       "studentName": classmate.studentName,
+//       "concernArray": newConcernArray,
+//       "timeLineArray": newTimeArray
+//     });
+//   })
+// )
 
 function DateToInt(dateString) {
   if (typeof dateString != "string") {
     return dateString;
   }
 
-  var newDateString = "";
-  var index = 0;
+  let newDateString = "";
+  let index = 0;
 
   do {
     if (dateString[index + 1] === ":") {
@@ -155,7 +143,7 @@ function IntToDate(number) {
     return number;
   }
 
-  var newDateString = "";
+  let newDateString = "";
 
   if (number % 100 >= 60) {
     number += 40;
@@ -167,7 +155,7 @@ function IntToDate(number) {
     number -= 240000;
   }
 
-  var hour = parseInt(number / 10000);
+  let hour = parseInt(number / 10000);
   if (hour >= 10) newDateString += hour;
   else if (hour === 0) newDateString += "00";
   else {
@@ -177,7 +165,7 @@ function IntToDate(number) {
 
   newDateString += ":";
 
-  var min = parseInt((number % 10000) / 100);
+  let min = parseInt((number % 10000) / 100);
   if (min >= 10) newDateString += min;
   else if (min === 0) newDateString += "00";
   else {
@@ -187,7 +175,7 @@ function IntToDate(number) {
 
   newDateString += ":";
 
-  var second = parseInt(number % 100);
+  let second = parseInt(number % 100);
   if (second >= 10) newDateString += second;
   else if (second === 0) newDateString += "00";
   else {
