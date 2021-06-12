@@ -14,6 +14,8 @@ teacherRouter.post(
   expressAsyncHandler(async (req, res) => {
     const { teacherName, classroomMeetID } = req.body;
 
+    newTime = new Date();
+    
     const newClassroom = new Classroom({
       teacherName: teacherName,
       classroomMeetID: classroomMeetID,
