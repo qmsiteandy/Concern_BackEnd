@@ -167,12 +167,23 @@ teacherRouter.post(
     const { classroomDataID } = req.body;
     const classroom = await Classroom.findById(classroomDataID);
     if(classroom){
-      let dataString = "";
+      // let dataString = "";
+      // classroom.classmates.map(classmate => {
+      //   dataString += "{\"studentName\":\"" + classmate.studentName + "\", \"studentID\":\"" + classmate.studentID + "\", \"newConcernDegree\":\"" + classmate.newConcernDegree + "\"},";
+      // })
+      // dataString = dataString.substring(0, dataString.length - 1)
+      // res.send(dataString);
+
+      let dataList = new Array();
       classroom.classmates.map(classmate => {
-        dataString += "{\"studentName\":\"" + classmate.studentName + "\", \"studentID\":\"" + classmate.studentID + "\", \"newConcernDegree\":\"" + classmate.newConcernDegree + "\"},";
+        dataList.push({
+          "studentName": classmate.studentName,
+          "studentID": classmate.studentID,
+          "newConcernDegree": classmate.newConcernDegree,
+        })
       })
-      dataString = dataString.substring(0, dataString.length - 1)
-      res.send(dataString);
+      res.send(dataList);
+
     }else{
       res.send("找不到教室資訊");
     }
