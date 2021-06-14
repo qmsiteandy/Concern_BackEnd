@@ -11,7 +11,7 @@ teacherRouter.post(
   "/getTeacherData",
   expressAsyncHandler(async (req, res) => {
     const { teacherDataID } = req.body;
-    const teacher = await Teacher.findById(courseDataID);
+    const teacher = await Teacher.findById(teacherDataID);
     if (teacher) {
       res.send({teacher});
     } else {
