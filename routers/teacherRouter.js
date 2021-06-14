@@ -7,6 +7,19 @@ const teacherRouter = express.Router();
 const { response } = require('express');
 
 
+teacherRouter.post(
+  "/getTeacherData",
+  expressAsyncHandler(async (req, res) => {
+    const { teacherDataID } = req.body;
+    const teacher = await Teacher.findById(courseDataID);
+    if (teacher) {
+      res.send({teacher});
+    } else {
+      res.send("尚無此位教師");
+    }
+  })
+);
+
 //#region ==========課程部分==========
 
 teacherRouter.post(
@@ -59,7 +72,7 @@ teacherRouter.post(
       classroom.endTime = newTime.getHours() + ":" + newTime.getMinutes(),
       classroom.isClassing = false;
       const updatedClassroom = await classroom.save();
-      res.send("課堂結束");
+      res.send("課程結束");
     }
     else{
       res.send("找不到教室資訊");

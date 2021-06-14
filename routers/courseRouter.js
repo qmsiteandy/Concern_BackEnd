@@ -11,13 +11,28 @@ courseRouter.post(
     const { courseDataID } = req.body;
     const course = await Course.findById(courseDataID);
     if (course) {
-      res.send({
-        teacherName: course.teacherName,
-        teacherID: course.teacherID,
-        courseName: course.courseName,
-        classmates: course.classmates,
-        courseWeeks: course.courseWeeks,
-      });
+      res.send({course});
+    } else {
+      res.send("尚無此堂課程");
+    }
+  })
+);
+
+//用來自動允許學生加入google meet
+courseRouter.post(
+  "/checkStudentInList",
+  expressAsyncHandler(async (req, res) => {
+    const { courseDataID, studentGoogleName } = req.body;
+    const course = await Course.findById(courseDataID);
+    if (course) {
+        //確認更改後學號是否重複
+        let studentInList = false;
+        for (let i = 0; i < course.classmates.length; i++) {
+          if ( course.classmates[i].studentGoogleName == studentGoogleName) {
+            studentInList = true;
+          }
+        }
+        res.send(studentInList);
     } else {
       res.send("尚無此堂課程");
     }
@@ -25,6 +40,19 @@ courseRouter.post(
 );
 
 //#region ==========學生名單設定部分==========
+
+courseRouter.post(
+  "/getClassmatesList",
+  expressAsyncHandler(async (req, res) => {
+    const { courseDataID } = req.body;
+    const course = await Course.findById(courseDataID);
+    if (course) {
+        res.send(course.classmates);
+    } else {
+      res.send("尚無此堂課程");
+    }
+  })
+);
 
 courseRouter.post(
   "/addStudent",
@@ -135,27 +163,6 @@ courseRouter.post(
   })
 );
 
-//用來自動允許學生加入google meet
-courseRouter.post(
-  "/checkStudentInList",
-  expressAsyncHandler(async (req, res) => {
-    const { courseDataID, studentGoogleName } = req.body;
-    const course = await Course.findById(courseDataID);
-    if (course) {
-        //確認更改後學號是否重複
-        let studentInList = false;
-        for (let i = 0; i < course.classmates.length; i++) {
-          if ( course.classmates[i].studentGoogleName == studentGoogleName) {
-            studentInList = true;
-          }
-        }
-        res.send(studentInList);
-    } else {
-      res.send("尚無此堂課程");
-    }
-  })
-);
-
 function ClassmatesSorting(ClassmateDataArray) {
   let storage;
   //console.log(ClassmateDataArray)
@@ -199,7 +206,10 @@ courseRouter.post(
         classroom.isLinkToCourse = true;
         const uploadedClassroom = await classroom.save();
 
-        res.send("新增週次並連結課堂Date完成");
+        res.send({
+          courseName: uploadedCourse.courseName,
+          weekName: uploadedCourse.courseWeeks[uploadedCourse.courseWeeks.length-1].weekName,
+        });
       }else{
         res.send("尚無此教室");
       }
