@@ -85,45 +85,6 @@ courseRouter.post(
 );
 
 courseRouter.post(
-  "/deleteAllStudents",
-  expressAsyncHandler(async (req, res) => {
-    const { courseDataID } = req.body;
-    const course = await Course.findById(courseDataID);
-    if (course) {
-      course.classmates = [];
-      const uploadedCourse = await course.save();
-      res.send(uploadedCourse.classmates);
-    } else {
-      res.send("尚無此堂課程");
-    }
-  })
-);
-
-courseRouter.post(
-  "/deleteOneStudent",
-  expressAsyncHandler(async (req, res) => {
-    const { courseDataID, studentID } = req.body;
-    const course = await Course.findById(courseDataID);
-    if (course) {
-      let studentIndex = null;
-      for (let i = 0; i < course.classmates.length; i++)
-        if (course.classmates[i].studentID == studentID) studentIndex = i;
-
-      if (studentIndex != null) {
-        course.classmates.splice(studentIndex, 1);
-      } else {
-        res.send("此學號不在名單中");
-      }
-
-      const uploadedCourse = await course.save();
-      res.send(uploadedCourse.classmates);
-    } else {
-      res.send("尚無此堂課程");
-    }
-  })
-);
-
-courseRouter.post(
   "/editOneStudent",
   expressAsyncHandler(async (req, res) => {
     const { courseDataID, studentIndex, studentName, studentGoogleName, studentID } = req.body;
@@ -162,6 +123,46 @@ courseRouter.post(
     }
   })
 );
+
+courseRouter.post(
+  "/deleteOneStudent",
+  expressAsyncHandler(async (req, res) => {
+    const { courseDataID, studentID } = req.body;
+    const course = await Course.findById(courseDataID);
+    if (course) {
+      let studentIndex = null;
+      for (let i = 0; i < course.classmates.length; i++)
+        if (course.classmates[i].studentID == studentID) studentIndex = i;
+
+      if (studentIndex != null) {
+        course.classmates.splice(studentIndex, 1);
+      } else {
+        res.send("此學號不在名單中");
+      }
+
+      const uploadedCourse = await course.save();
+      res.send(uploadedCourse.classmates);
+    } else {
+      res.send("尚無此堂課程");
+    }
+  })
+);
+
+courseRouter.post(
+  "/deleteAllStudents",
+  expressAsyncHandler(async (req, res) => {
+    const { courseDataID } = req.body;
+    const course = await Course.findById(courseDataID);
+    if (course) {
+      course.classmates = [];
+      const uploadedCourse = await course.save();
+      res.send(uploadedCourse.classmates);
+    } else {
+      res.send("尚無此堂課程");
+    }
+  })
+);
+
 
 function ClassmatesSorting(ClassmateDataArray) {
   let storage;
@@ -233,7 +234,7 @@ courseRouter.post(
       course.courseWeeks = [];
       const uploadedCourse = await course.save();
 
-      res.send("刪除完成");
+      res.send(uploadedCourse.courseWeeks);
     } else {
       res.send("尚無此堂課程");
     }
@@ -255,7 +256,7 @@ courseRouter.post(
       }
 
       const uploadedCourse = await course.save();
-      res.send("刪除完成");
+      res.send(uploadedCourse.courseWeeks);
     } else {
       res.send("尚無此堂課程");
     }
