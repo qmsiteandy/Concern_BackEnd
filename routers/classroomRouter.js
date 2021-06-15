@@ -10,9 +10,9 @@ classroomRouter.post(
         const { classroomDataID } = req.body;
         const classroom = await Classroom.findById(classroomDataID);
         if (classroom) {
-            res.send({classroom});
+            res.status(200).send({classroom});
         } else {
-            res.send("尚無此教室");
+            res.status(404).send("尚無此教室");
         }
     })
 );

@@ -16,6 +16,7 @@ studentRouter.post(
 
     if(classroom){
       let indexInList = classroom.classmates.findIndex(element => (element.studentName == studentName && element.studentID == studentID));
+      //此學生尚未在名單中，需創建
       if(indexInList == -1){
         const newClassmate = {
           studentName:studentName,
@@ -28,18 +29,19 @@ studentRouter.post(
         };
         classroom.classmates.push(newClassmate);
         const uploadedClassroom = await classroom.save();
-        res.send({
+        res.status(201).send({
           "classroomDataID": classroom._id,
           "indexInList":uploadedClassroom.classmates.length-1
         });
+      //此學生已在名單中，不需再創建
       }else{
-        res.send({
+        res.status(201).send({
           "classroomDataID": classroom._id,
           "indexInList":indexInList
         });
       }
     }else{
-      res.send("此教室尚未開啟");
+      res.status(404).send("此教室尚未開啟");
     }
   })
 );
@@ -51,8 +53,8 @@ studentRouter.put(
     const classroom = await Classroom.findById(classroomDataID);
 
     if(classroom){
-      if(classroom.isClassing == false) res.send("課程尚未開始");
-      else if(classroom.isResting == true) res.send("下課休息時間");
+      if(classroom.isClassing == false) res.status(400).send("課程尚未開始");
+      else if(classroom.isResting == true) res.status(401).send("下課休息時間");
       else{
         let updateClassmate = classroom.classmates[indexInList];
 
@@ -64,10 +66,10 @@ studentRouter.put(
         classroom.classmates.splice(indexInList, 1, updateClassmate);
 
         const updatedClassroom = await classroom.save();
-        res.send("上傳成功");
+        res.status(200).send("上傳成功");
       }
     }else{
-      res.send("無此課堂教室");
+      res.status(404).send("無此課堂教室");
     }
   })
 );
