@@ -36,7 +36,7 @@ teacherRouter.post(
     });
 
     const updatedClassroom = await newClassroom.save();
-    res.statue(201).send({classroomDataID: updatedClassroom._id});
+    res.status(201).send({classroomDataID: updatedClassroom._id});
 
   })
 );
@@ -50,12 +50,12 @@ teacherRouter.post(
     if(classroom){
       if(classroom.isLinkToCourse == false){
         //未完成，Classroom.remove({"_id" : ObjectId(classroomDataID)});
-        res.statue(200).send("教室刪除");
+        res.status(200).send("教室刪除");
       }else{
-        res.statue(200).send("教室關閉");
+        res.status(200).send("教室關閉");
       }
     }else{
-      res.statue(404).send("無此教室資訊");
+      res.status(404).send("無此教室資訊");
     }
   })
 );
@@ -72,10 +72,10 @@ teacherRouter.post(
       classroom.isClassing = true
 
       const updatedClassroom = await classroom.save();
-      res.statue(200).send("課程開始");
+      res.status(200).send("課程開始");
 
     }else{
-      res.statue(404).send("無此教室資訊");
+      res.status(404).send("無此教室資訊");
     }
   })
 );
@@ -91,10 +91,10 @@ teacherRouter.post(
       classroom.endTime = newTime.getHours() + ":" + newTime.getMinutes(),
       classroom.isClassing = false;
       const updatedClassroom = await classroom.save();
-      res.statue(200).send("課程結束");
+      res.status(200).send("課程結束");
     }
     else{
-      res.statue(404).send("無此教室資訊");
+      res.status(404).send("無此教室資訊");
     }
   })
 );
@@ -116,12 +116,12 @@ teacherRouter.post(
           })
           await classroom.save();
         }
-        res.statue(200).send("下課休息時間");
+        res.status(200).send("下課休息時間");
       }else{
-        res.statue(403).send("課堂尚未開始");
+        res.status(403).send("課堂尚未開始");
       }
     }else{
-      res.statue(404).send("無此教室資訊");
+      res.status(404).send("無此教室資訊");
     }
   })
 );
@@ -144,15 +144,15 @@ teacherRouter.post(
           classroom.restTime.splice(classroom.restTime.length-1, 1, updateRest);
           
           const uploadedClassroom = await classroom.save();
-          res.statue(200).send("下課時間結束");
+          res.status(200).send("下課時間結束");
         }else{
-          res.statue(400).send("非下課時間");
+          res.status(400).send("非下課時間");
         }
       }else{
-        res.statue(403).send("課堂尚未開始");
+        res.status(403).send("課堂尚未開始");
       }
     }else{
-      res.statue(404).send("無此教室資訊");
+      res.status(404).send("無此教室資訊");
     }
 
     newTime = new Date();
@@ -173,10 +173,10 @@ teacherRouter.post(
           "newConcernDegree": classmate.newConcernDegree,
         })
       })
-      res.statue(200).send(dataList);
+      res.status(200).send(dataList);
 
     }else{
-      res.statue(404).send("無此教室資訊");
+      res.status(404).send("無此教室資訊");
     }
   })
 )
@@ -192,7 +192,7 @@ teacherRouter.post(
   expressAsyncHandler(async (req, res) => {
     const { teacherName, teacherID } = req.body;
 
-    if(!teacherName || !teacherID) res.statue(400).send("缺少老師姓名或ID");
+    if(!teacherName || !teacherID) res.status(400).send("缺少老師姓名或ID");
 
     const teacher = await Teacher.findOne({ 
       $and: [{
@@ -202,7 +202,7 @@ teacherRouter.post(
       }] });
 
     if (teacher) {
-      res.statue(201).send({
+      res.status(201).send({
         "teacherDataID": teacher._id,
         "teacherName": teacher.teacherName,
         "teacherID": teacher.teacherID,
@@ -214,7 +214,7 @@ teacherRouter.post(
         teacherID: teacherID,
       });
       const uploadedTeacher = await newTeacher.save();
-      res.statue(201).send({
+      res.status(201).send({
         "teacherDataID": uploadedTeacher._id,
         "teacherName": uploadedTeacher.teacherName,
         "teacherID": uploadedTeacher.teacherID,
@@ -236,7 +236,7 @@ teacherRouter.post(
         if(element.courseName == courseName) courseExisted = true;
       });
 
-      if(courseExisted){res.statue(403).send("此課程已存在");}
+      if(courseExisted){res.status(403).send("此課程已存在");}
       else{
         const newCourse = new Course({
           "teacherName": teacher.teacherName,
@@ -251,14 +251,14 @@ teacherRouter.post(
         })
         const uploadedTeacher = await teacher.save()
 
-        res.statue(201).send({
+        res.status(201).send({
           "teacherName": uploadedTeacher.teacherName,
           "teacherID": uploadedTeacher.teacherID,
           "courses": uploadedTeacher.courses
         });
       }
     }else{
-      res.statue(404).send("尚無此位老師");
+      res.status(404).send("尚無此位老師");
     }
   })
 );
