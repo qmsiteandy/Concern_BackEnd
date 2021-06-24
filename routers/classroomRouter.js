@@ -47,6 +47,6 @@ classroomRouter.post(
 function GetTime_H_M(){
     newTime = new Date();
     return newTime.getHours() + ":" + ((newTime.getMinutes() < 10 ? '0' : '') + newTime.getMinutes());
-  }
+}
 
 module.exports = classroomRouter;
