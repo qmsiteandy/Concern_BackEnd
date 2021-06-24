@@ -1,7 +1,5 @@
 const mongoose = require('mongoose');
 
-
-
 const classroomSchema = new mongoose.Schema(
   {
     teacherName: { type: String},
@@ -21,10 +19,12 @@ const classroomSchema = new mongoose.Schema(
       restEndTime:{type: String}
     },
 
+    rollcallTime: { type: Array },
+
     classmates: {type: Array,
       studentName: { type: String, required: true},
       studentID: { type: String, required: true},
-      attendance:{ type: Array},
+      rollcall:{ type: Array},
       personalLeave:{ type: Boolean, default: false },
       newConcernDegree:{ type: Number},
       concernDegreeArray:{ type: Array},

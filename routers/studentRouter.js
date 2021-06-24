@@ -9,10 +9,9 @@ studentRouter.post(
   expressAsyncHandler(async (req, res) => {
     const { classroomMeetID, studentName, studentID } = req.body;
 
-    newTime = new Date();
     const classroom = await Classroom.findOne({
       'classroomMeetID': classroomMeetID
-    }).sort({$natural:-1});
+    }).sort({$natural:-1}); //尋找最後一個
 
     if(classroom){
       let indexInList = classroom.classmates.findIndex(element => (element.studentName == studentName && element.studentID == studentID));
@@ -60,8 +59,7 @@ studentRouter.put(
 
         updateClassmate.newConcernDegree = concernDegree;
         updateClassmate.concernDegreeArray.push(concernDegree);
-        newTime = new Date();
-        updateClassmate.timeLineArray.push(newTime.getHours() + ":" + newTime.getMinutes());
+        updateClassmate.timeLineArray.push(GetTime_H_M()),
 
         classroom.classmates.splice(indexInList, 1, updateClassmate);
 
@@ -73,6 +71,48 @@ studentRouter.put(
     }
   })
 );
+
+studentRouter.post(
+  "/rollcall",
+  expressAsyncHandler(async (req, res) => {
+    const { classroomDataID, indexInList, rollcallIndex } = req.body;
+    const classroom = await Classroom.findById(classroomDataID);
+
+    if(classroom){
+
+      let rollcallIndex = classroom.rollcallTime.length -1;
+      
+      let updateClassmate = classroom.classmates[indexInList];
+
+      while(updateClassmate.rollcall.length <= rollcallIndex){
+        if(rollcallIndex - updateClassmate.rollcall.length > 0)
+          updateClassmate.rollcall.push(false);
+        else
+          updateClassmate.rollcall.push(true);
+      }
+      
+      classroom.classmates.splice(indexInList, 1, updateClassmate);
+      const updatedClassroom = await classroom.save();
+
+      let result = new Array();
+      for(let i = 0; i < updatedClassroom.rollcallTime.length; i++){
+        result.push({
+          "rollcallIndex": i,
+          "rollcallTime": updatedClassroom.rollcallTime[i],
+          "rollcallStatus": updatedClassroom.classmates[indexInList].rollcall[i]
+        })
+      }
+      res.status(200).send(result);
+    }else{
+      res.status(404).send("無此課堂教室");
+    }
+  })
+);
+
+function GetTime_H_M(){
+  newTime = new Date();
+  return newTime.getHours() + ":" + ((newTime.getMinutes() < 10 ? '0' : '') + newTime.getMinutes());
+}
 
 // studentRouter.post(
 //   "/getPersonConcernDiagram",

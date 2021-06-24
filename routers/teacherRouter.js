@@ -67,8 +67,7 @@ teacherRouter.post(
 
     const classroom = await Classroom.findById(classroomDataID);
     if(classroom){
-      newTime = new Date();
-      classroom.startTime = newTime.getHours() + ":" + newTime.getMinutes(),
+      classroom.startTime = GetTime_H_M(),
       classroom.isClassing = true
 
       const updatedClassroom = await classroom.save();
@@ -87,8 +86,7 @@ teacherRouter.post(
 
     const classroom = await Classroom.findById(classroomDataID);
     if (classroom) {
-      newTime = new Date();
-      classroom.endTime = newTime.getHours() + ":" + newTime.getMinutes(),
+      classroom.endTime = GetTime_H_M(),
       classroom.isClassing = false;
       const updatedClassroom = await classroom.save();
       res.status(200).send("課程結束");
@@ -109,9 +107,8 @@ teacherRouter.post(
       if(classroom.isClassing){
         if(!classroom.isResting){
           classroom.isResting = true;
-          newTime = new Date();
           classroom.restTime.push({
-            "restStartTime": newTime.getHours() + ":" + newTime.getMinutes(),
+            "restStartTime": GetTime_H_M(),
             "restEndTime": ""
           })
           await classroom.save();
@@ -137,10 +134,8 @@ teacherRouter.post(
         if(classroom.isResting){
           classroom.isResting = false;
 
-          newTime = new Date();
-
           let updateRest = classroom.restTime[classroom.restTime.length-1];
-          updateRest.restEndTime = newTime.getHours() + ":" + newTime.getMinutes();
+          updateRest.restEndTime = GetTime_H_M();
           classroom.restTime.splice(classroom.restTime.length-1, 1, updateRest);
           
           const uploadedClassroom = await classroom.save();
@@ -154,8 +149,6 @@ teacherRouter.post(
     }else{
       res.status(404).send("無此教室資訊");
     }
-
-    newTime = new Date();
   })
 );
 
@@ -264,7 +257,10 @@ teacherRouter.post(
 );
 //#endregion ==========進階功能==========
 
-
+function GetTime_H_M(){
+  newTime = new Date();
+  return newTime.getHours() + ":" + ((newTime.getMinutes() < 10 ? '0' : '') + newTime.getMinutes());
+}
 
 
 // teacherRouter.post(
