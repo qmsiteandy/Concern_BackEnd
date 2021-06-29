@@ -67,10 +67,11 @@ teacherRouter.post(
 
     const classroom = await Classroom.findById(classroomDataID);
     if(classroom){
-      classroom.startTime = GetTime_H_M(),
+      classroom.startTime = Date.now(),  //以UNIX時間格式儲存
       classroom.isClassing = true
 
       const updatedClassroom = await classroom.save();
+      
       res.status(200).send("課程開始");
 
     }else{
@@ -86,7 +87,7 @@ teacherRouter.post(
 
     const classroom = await Classroom.findById(classroomDataID);
     if (classroom) {
-      classroom.endTime = GetTime_H_M(),
+      classroom.endTime = Date.now(),  //以UNIX時間格式儲存
       classroom.isClassing = false;
       const updatedClassroom = await classroom.save();
       res.status(200).send("課程結束");
@@ -108,7 +109,7 @@ teacherRouter.post(
         if(!classroom.isResting){
           classroom.isResting = true;
           classroom.restTime.push({
-            "restStartTime": GetTime_H_M(),
+            "restStartTime": Date.now(),  //以UNIX時間格式儲存
             "restEndTime": ""
           })
           await classroom.save();
@@ -135,7 +136,7 @@ teacherRouter.post(
           classroom.isResting = false;
 
           let updateRest = classroom.restTime[classroom.restTime.length-1];
-          updateRest.restEndTime = GetTime_H_M();
+          updateRest.restEndTime = Date.now();  //以UNIX時間格式儲存
           classroom.restTime.splice(classroom.restTime.length-1, 1, updateRest);
           
           const uploadedClassroom = await classroom.save();
@@ -257,10 +258,10 @@ teacherRouter.post(
 );
 //#endregion ==========進階功能==========
 
-function GetTime_H_M(){
-  newTime = new Date();
-  return newTime.getHours() + ":" + ((newTime.getMinutes() < 10 ? '0' : '') + newTime.getMinutes());
-}
+// function GetTime_H_M(){
+//   newTime = new Date();
+//   return newTime.getHours() + ":" + ((newTime.getMinutes() < 10 ? '0' : '') + newTime.getMinutes());
+// }
 
 
 // teacherRouter.post(

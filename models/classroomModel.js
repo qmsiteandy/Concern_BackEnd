@@ -10,13 +10,13 @@ const classroomSchema = new mongoose.Schema(
 
     isClassing:{type: Boolean, default: false },
     date:{type: String},
-    startTime:{type: String},
-    endTime:{type: String},
+    startTime:{type: Number},
+    endTime:{type: Number},
 
     isResting:{type: Boolean, default: false },
     restTime: {type: Array,
-      restStartTime: {type: String},
-      restEndTime:{type: String}
+      restStartTime: {type: Number},
+      restEndTime:{type: Number}
     },
 
     rollcallTime: { type: Array },
