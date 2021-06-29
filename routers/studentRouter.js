@@ -155,8 +155,9 @@ studentRouter.post(
         newTimeArray[i] = ConvertDateNumberToTimeString(timeSpacing, newTimeArray[i]);
       }
 
-      res.send({
+      res.status(200).send({
         "studentName": classmate.studentName,
+        "studentID": classmate.studentID,
         "concernArray": newConcernArray,
         "timeLineArray": newTimeArray
       });
