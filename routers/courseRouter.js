@@ -285,9 +285,11 @@ function ClassmatesSorting(ClassmateDataArray) {
   for (let i = 0; i < ClassmateDataArray.length; i++) {
     let minIndex = i;
     for (let j = i + 1; j < ClassmateDataArray.length; j++) {
-      if (parseInt(ClassmateDataArray[minIndex].studentID) > parseInt(ClassmateDataArray[j].studentID)) {
-        minIndex = j;
-      }
+
+      let ID_smallest = parseInt(ClassmateDataArray[minIndex].studentID.replace(/[^0-9]/ig,""));
+      let ID_j = parseInt(ClassmateDataArray[j].studentID.replace(/[^0-9]/ig,""));
+
+      if (ID_smallest > ID_j) minIndex = j;
     }
     storage = ClassmateDataArray[i];
     ClassmateDataArray[i] = ClassmateDataArray[minIndex];

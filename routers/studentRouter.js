@@ -14,7 +14,7 @@ studentRouter.post(
     }).sort({$natural:-1}); //尋找最後一個
 
     if(classroom){
-      let indexInList = classroom.classmates.findIndex(element => (element.studentName == studentName && element.studentID == studentID));
+      let indexInList = classroom.classmates.findIndex(element => (element.studentID == studentID));
       //此學生尚未在名單中，需創建
       if(indexInList == -1){
         const newClassmate = {
@@ -64,6 +64,7 @@ studentRouter.put(
         // //製作測試數據
         // let newTime = Date.now();
         // for(let i = 0; i<1000; i++){
+
         //   newTime += 250;
         //   updateClassmate.concernDegreeArray.push(Math.random());
         //   updateClassmate.timeLineArray.push(Math.floor(newTime)); //以UNIX時間格式儲存
@@ -126,7 +127,7 @@ studentRouter.post(
     let concernAdder = 0;
     let aveCounter = 0;
     let dataIndex = 0;
-    let timeSpacing_second = timeSpacing * 1000;
+    let timeSpacing_millis = timeSpacing * 1000;
 
     const classroom = await Classroom.findById(classroomDataID);
 
@@ -136,9 +137,9 @@ studentRouter.post(
 
       do{
         if(newTimeArray.length == 0 ) newTimeArray.push(classroom.startTime);
-        else newTimeArray.push(newTimeArray[newTimeArray.length-1] + timeSpacing_second);
+        else newTimeArray.push(newTimeArray[newTimeArray.length-1] + timeSpacing_millis);
 
-        while(classmate.timeLineArray[dataIndex] < newTimeArray[newTimeArray.length-1] + timeSpacing_second){
+        while(classmate.timeLineArray[dataIndex] < newTimeArray[newTimeArray.length-1] + timeSpacing_millis){
           concernAdder += classmate.concernDegreeArray[dataIndex];
           aveCounter += 1;
           
@@ -149,10 +150,11 @@ studentRouter.post(
         concernAdder = 0;
         aveCounter = 0;
 
-      }while(newTimeArray[newTimeArray.length-1] + timeSpacing_second < endTime)
+      }while(newTimeArray[newTimeArray.length-1] + timeSpacing_millis < endTime)
 
+      let timeStringFormat = timeSpacing < 60? "hh:mm:ss" : "hh:mm";
       for(let i = 0; i < newTimeArray.length; i++){
-        newTimeArray[i] = ConvertDateNumberToTimeString(timeSpacing, newTimeArray[i]);
+        newTimeArray[i] = ConvertUNIXTimeToTimeString(timeStringFormat, newTimeArray[i]);
       }
 
       res.status(200).send({
@@ -168,86 +170,22 @@ studentRouter.post(
   })
 )
 
-function ConvertDateNumberToTimeString(timeSpacing, dateNumber){
+function ConvertUNIXTimeToTimeString(format, dateNumber){
+
   newTime = new Date(dateNumber);
 
-  if(timeSpacing > 60) return newTime.getHours() + ":" + ((newTime.getMinutes() < 10 ? '0' : '') + newTime.getMinutes());
-  else return newTime.getHours() + ":" + ((newTime.getMinutes() < 10 ? '0' : '') + newTime.getMinutes()) + ":" + ((newTime.getSeconds() < 10 ? '0' : '') + newTime.getSeconds());
+  let timeString = format
+    .replace("YYYY", newTime.getFullYear())
+    .replace("MM", ((newTime.getMonth() < 10 ? '0' : '') + newTime.getMonth()))
+    .replace("DD", ((newTime.getDate() < 10 ? '0' : '') + newTime.getDate()))
+    .replace("hh", ((newTime.getHours() < 10 ? '0' : '') + newTime.getHours()))
+    .replace("mm", ((newTime.getMinutes() < 10 ? '0' : '') + newTime.getMinutes()))
+    .replace("ss", ((newTime.getSeconds() < 10 ? '0' : '') + newTime.getSeconds()))
+ 
+  return timeString;
 }
 
-// function DateToInt(dateString) {
-//   if (typeof dateString != "string") {
-//     return dateString;
-//   }
 
-//   let newDateString = "";
-//   let index = 0;
 
-//   do {
-//     if (dateString[index + 1] === ":") {
-//       newDateString += "0";
-//       newDateString += dateString[index];
-//       index += 2;
-//     } else if (index >= dateString.length - 1) {
-//       newDateString += "0";
-//       newDateString += dateString[index];
-//       index += 2;
-//     } else if (dateString[index] != ":" && dateString[index + 1] != ":") {
-//       newDateString += dateString[index];
-//       newDateString += dateString[index + 1];
-//       index += 3;
-//     }
-//   } while (index < dateString.length);
-
-//   return Number(newDateString);
-// }
-// function IntToDate(number) {
-//   if (typeof number != "number") {
-//     console.log("NOT");
-//     return number;
-//   }
-
-//   let newDateString = "";
-
-//   if (number % 100 >= 60) {
-//     number += 40;
-//   }
-//   if (number % 10000 >= 6000) {
-//     number += 4000;
-//   }
-//   if (number / 10000 >= 24) {
-//     number -= 240000;
-//   }
-
-//   let hour = parseInt(number / 10000);
-//   if (hour >= 10) newDateString += hour;
-//   else if (hour === 0) newDateString += "00";
-//   else {
-//     newDateString += "0";
-//     newDateString += hour;
-//   }
-
-//   newDateString += ":";
-
-//   let min = parseInt((number % 10000) / 100);
-//   if (min >= 10) newDateString += min;
-//   else if (min === 0) newDateString += "00";
-//   else {
-//     newDateString += "0";
-//     newDateString += min;
-//   }
-
-//   newDateString += ":";
-
-//   let second = parseInt(number % 100);
-//   if (second >= 10) newDateString += second;
-//   else if (second === 0) newDateString += "00";
-//   else {
-//     newDateString += "0";
-//     newDateString += second;
-//   }
-
-//   return newDateString;
-// }
 
 module.exports = studentRouter;

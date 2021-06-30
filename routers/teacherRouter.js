@@ -33,6 +33,8 @@ teacherRouter.post(
       teacherName: teacherName,
       classroomMeetID: classroomMeetID,
       date: newTime.getFullYear() + "/" + (newTime.getMonth()+1) + "/" + newTime.getDate(),
+      startTime: null,
+      endTime: null
     });
 
     const updatedClassroom = await newClassroom.save();
