@@ -64,7 +64,7 @@ studentRouter.put(
           for(let i = 0; i < dataCount; i++){
 
             newTime += 250;
-            updateClassmate.concernDegreeArray.push(parseFloat((Math.random() * 0.5 + 0.6).toFixed(4)));
+            updateClassmate.concernDegreeArray.push(Math.random() * 0.5 + 0.6);
             updateClassmate.timeLineArray.push(newTime); //以UNIX時間格式儲存
           }
           
@@ -97,8 +97,8 @@ studentRouter.put(
 
         if(updateClassmate){
 
-          updateClassmate.newConcernDegree = parseFloat(concernDegree.toFixed(4));
-          updateClassmate.concernDegreeArray.push(parseFloat(concernDegree.toFixed(4)));
+          updateClassmate.newConcernDegree = concernDegree;
+          updateClassmate.concernDegreeArray.push(concernDegree);
           updateClassmate.timeLineArray.push(Date.now()); //以UNIX時間格式儲存
           
           classroom.classmates.splice(indexInList, 1, updateClassmate);
