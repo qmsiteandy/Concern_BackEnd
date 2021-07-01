@@ -4,6 +4,8 @@ const Classroom = require("../models/classroomModel");
 const studentRouter = express.Router();
 const { response } = require("express");
 
+const concernLimit0 = 0.5, concernLimit1 = 0.8;
+
 studentRouter.post(
   "/enterClassroom",
   expressAsyncHandler(async (req, res) => {
@@ -127,7 +129,6 @@ studentRouter.post(
       let classmate = classroom.classmates[indexInList];
       if(classmate){
 
-        let concernLimit = 0.8;
         //用來記錄專注平均
         let aveConcernAdder = 0;
         //用來記錄專注百分比
@@ -142,11 +143,11 @@ studentRouter.post(
           aveConcernAdder += classmate.concernDegreeArray[i];
 
           //用來記錄專注百分比，之後會除以concernDegreeArray.length
-          if (classmate.concernDegreeArray[i] >= concernLimit)
+          if (classmate.concernDegreeArray[i] >= concernLimit1)
             concernCounter += 1;
 
           //用來記錄最常持續時間
-          if (classmate.concernDegreeArray[i] >= concernLimit) {
+          if (classmate.concernDegreeArray[i] >= concernLimit1) {
             if (i < classmate.timeLineArray.length - 1) {
               isLasting = true;
               lastedTime +=
@@ -154,7 +155,7 @@ studentRouter.post(
             }
           } else if (
             isLasting &&
-            classmate.concernDegreeArray[i] < concernLimit
+            classmate.concernDegreeArray[i] < concernLimit1
           ) {
             if (lastedTime > bestlasted) bestlasted = lastedTime;
             lastedTime = 0;

@@ -4,6 +4,8 @@ const Classroom = require("../models/classroomModel");
 const classroomRouter = express.Router();
 const { response } = require("express");
 
+const concernLimit0 = 0.5, concernLimit1 = 0.8;
+
 classroomRouter.post(
   "/getClassroomTimeStatus",
   expressAsyncHandler(async (req, res) => {
@@ -64,12 +66,159 @@ classroomRouter.post(
 );
 
 classroomRouter.post(
+  "/getRankData",
+  expressAsyncHandler(async (req, res) => {
+    const { classroomDataID, rankCount } = req.body;
+    const classroom = await Classroom.findById(classroomDataID);
+    if (classroom) {
+      if (classroom.classmates.length > 0) {
+
+        let classmateData = new Array();
+
+        classroom.classmates.forEach((classmate) => {
+
+          //用來記錄專注平均
+          let aveConcernAdder = 0;
+          //用來記錄專注百分比
+          let concernCounter = 0;
+          //用來記錄最常持續時間
+          let isLasting = false;
+          let lastedTime = 0;
+          let bestLasted = 0;
+
+          for (let i = 0; i < classmate.timeLineArray.length; i++) {
+            //用來記錄專注平均
+            aveConcernAdder += classmate.concernDegreeArray[i];
+
+            //用來記錄專注百分比，之後會除以concernDegreeArray.length
+            if (classmate.concernDegreeArray[i] >= concernLimit1)
+              concernCounter += 1;
+
+            //用來記錄最常持續時間
+            if (classmate.concernDegreeArray[i] >= concernLimit1) {
+              if (i < classmate.timeLineArray.length - 1) {
+                isLasting = true;
+                lastedTime +=
+                  classmate.timeLineArray[i + 1] - classmate.timeLineArray[i];
+              }
+            } else if (
+              isLasting &&
+              classmate.concernDegreeArray[i] < concernLimit1
+            ) {
+              if (lastedTime > bestLasted) bestLasted = lastedTime;
+              lastedTime = 0;
+            }
+          }
+
+          //計算專注平均
+          let aveConcern = parseFloat((aveConcernAdder / classmate.concernDegreeArray.length).toFixed(2));
+
+          //計算專注百分比
+          let concernPercentage = concernCounter / classmate.concernDegreeArray.length;
+          let concernPercentageString = Math.floor((concernPercentage) * 100) + "%";
+
+          //最常持續時間顯示格式
+          let bestLastedString = "";
+          let hour = bestLasted / (60 * 60 * 1000);
+          bestLastedString += hour < 1 ? "0:" : hour + ":";
+          let min = Math.floor(bestLasted / (60 * 1000));
+          bestLastedString += min < 10 ? "0" + min + ":" : min + ":";
+          let second = Math.floor(bestLasted / 1000);
+          bestLastedString += second < 10 ? "0" + second : second;
+
+
+          classmateData.push({
+            studentName: classmate.studentName,
+            studentID: classmate.studentID,
+            aveConcern: aveConcern,
+            concernPercentage: concernPercentage,
+            concernPercentageString: concernPercentageString,
+            bestLasted: bestLasted,
+            bestLastedString: bestLastedString
+          });
+        });
+
+        let result = {
+           aveConcernRank: new Array(),
+           concernPercentageRank: new Array(),
+           bestLastedRank: new Array()
+        };
+
+        //aveConcernRank排序
+        for(let rank = 0; rank < rankCount; rank++){
+
+          let bestIndex = rank; 
+          for(let i = rank+1; i < classmateData.length; i++){
+            if(classmateData[bestIndex].aveConcern < classmateData[i].aveConcern) bestIndex = i;
+          }
+          let storage = classmateData[bestIndex];
+          classmateData[bestIndex] = classmateData[rank];
+          classmateData[rank] = storage;
+
+          result.aveConcernRank.push({
+            rank: rank+1,
+            studentName: storage.studentName,
+            studentID: storage.studentID,
+            aveConcern: storage.aveConcern
+          })
+        }
+        //concernPercentage排序
+        for(let rank = 0; rank < rankCount; rank++){
+
+          let bestIndex = rank; 
+          for(let i = rank+1; i < classmateData.length; i++){
+            if(parseFloat(classmateData[bestIndex].concernPercentage) < parseFloat(classmateData[i].concernPercentage)) bestIndex = i;
+          }
+          let storage = classmateData[bestIndex];
+          classmateData[bestIndex] = classmateData[rank];
+          classmateData[rank] = storage;
+
+          result.concernPercentageRank.push({
+            rank: rank+1,
+            studentName: storage.studentName,
+            studentID: storage.studentID,
+            concernPercentage: storage.concernPercentageString
+          })
+        }
+        //bestLasted排序
+        for(let rank = 0; rank < rankCount; rank++){
+
+          let bestIndex = rank; 
+          for(let i = rank+1; i < classmateData.length; i++){
+            if(classmateData[bestIndex].bestLasted < classmateData[i].bestLasted) bestIndex = i;
+          }
+          let storage = classmateData[bestIndex];
+          classmateData[bestIndex] = classmateData[rank];
+          classmateData[rank] = storage;
+
+          result.bestLastedRank.push({
+            rank: rank+1,
+            studentName: storage.studentName,
+            studentID: storage.studentID,
+            bestLasted: storage.bestLastedString
+          })
+        }
+
+        
+
+
+
+        res.status(200).send(result);
+
+      } else {
+        res.status(403).send("此教室尚無學生資料");
+      }
+    } else {
+      res.status(404).send("尚無此教室");
+    }
+  })
+);
+
+classroomRouter.post(
   "/getStatisticsDiagram",
   expressAsyncHandler(async (req, res) => {
     const { classroomDataID, timeSpacing } = req.body;
     const classroom = await Classroom.findById(classroomDataID);
-
-    const concernLimit0 = 0.5, concernLimit1 = 0.8;
 
     if (classroom) {
       if (classroom.classmates.length > 0) {
@@ -178,7 +327,7 @@ classroomRouter.post(
         let result = new Array();
 
         classroom.classmates.forEach((classmate) => {
-          let concernLimit = 0.8;
+
           //用來記錄專注平均
           let aveConcernAdder = 0;
           //用來記錄專注百分比
@@ -186,18 +335,18 @@ classroomRouter.post(
           //用來記錄最常持續時間
           let isLasting = false;
           let lastedTime = 0;
-          let bestlasted = 0;
+          let bestLasted = 0;
 
           for (let i = 0; i < classmate.timeLineArray.length; i++) {
             //用來記錄專注平均
             aveConcernAdder += classmate.concernDegreeArray[i];
 
             //用來記錄專注百分比，之後會除以concernDegreeArray.length
-            if (classmate.concernDegreeArray[i] >= concernLimit)
+            if (classmate.concernDegreeArray[i] >= concernLimit1)
               concernCounter += 1;
 
             //用來記錄最常持續時間
-            if (classmate.concernDegreeArray[i] >= concernLimit) {
+            if (classmate.concernDegreeArray[i] >= concernLimit1) {
               if (i < classmate.timeLineArray.length - 1) {
                 isLasting = true;
                 lastedTime +=
@@ -205,15 +354,15 @@ classroomRouter.post(
               }
             } else if (
               isLasting &&
-              classmate.concernDegreeArray[i] < concernLimit
+              classmate.concernDegreeArray[i] < concernLimit1
             ) {
-              if (lastedTime > bestlasted) bestlasted = lastedTime;
+              if (lastedTime > bestLasted) bestLasted = lastedTime;
               lastedTime = 0;
             }
           }
 
           //計算專注平均
-          let aveConcern = (
+          let aveConcern = parseFloat(
             aveConcernAdder / classmate.concernDegreeArray.length
           ).toFixed(2);
 
@@ -224,13 +373,13 @@ classroomRouter.post(
             ) + "%";
 
           //最常持續時間顯示格式
-          let bestlastedString = "";
-          let hour = bestlasted / (60 * 60 * 1000);
-          bestlastedString += hour < 1 ? "0:" : hour + ":";
-          let min = Math.floor(bestlasted / (60 * 1000));
-          bestlastedString += min < 10 ? "0" + min + ":" : min + ":";
-          let second = Math.floor(bestlasted / 1000);
-          bestlastedString += second < 10 ? "0" + second : second;
+          let bestLastedString = "";
+          let hour = bestLasted / (60 * 60 * 1000);
+          bestLastedString += hour < 1 ? "0:" : hour + ":";
+          let min = Math.floor(bestLasted / (60 * 1000));
+          bestLastedString += min < 10 ? "0" + min + ":" : min + ":";
+          let second = Math.floor(bestLasted / 1000);
+          bestLastedString += second < 10 ? "0" + second : second;
 
           
           //紀錄參與時長
@@ -282,7 +431,7 @@ classroomRouter.post(
             studentID: classmate.studentID,
             aveConcern: aveConcern,
             concernPercentage: concernPercentage,
-            bestLasted: bestlastedString,
+            bestLasted: bestLastedString,
             attendTimePercentage: attendTimePercentage,
             timeLineArray: newTimeArray,
             concernDegreeArray: newConcernArray,

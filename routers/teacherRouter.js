@@ -6,6 +6,7 @@ const Classroom = require('../models/classroomModel');
 const teacherRouter = express.Router();
 const { response } = require('express');
 
+const concernLimit0 = 0.5, concernLimit1 = 0.8;
 
 teacherRouter.post(
   "/getTeacherData",
@@ -260,11 +261,6 @@ teacherRouter.post(
 );
 //#endregion ==========進階功能==========
 
-// function GetTime_H_M(){
-//   newTime = new Date();
-//   return newTime.getHours() + ":" + ((newTime.getMinutes() < 10 ? '0' : '') + newTime.getMinutes());
-// }
-
 
 // teacherRouter.post(
 //   "/getClassmatesList",
@@ -296,184 +292,5 @@ teacherRouter.post(
 //     });
 //   })
 // )
-
-// teacherRouter.post(
-//   "/getPersonConcernDiagram",
-//   expressAsyncHandler(async (req, res) => {
-//     const { classroomMeetID, DataID, timeSpacing } = req.body;
-//     let newConcernArray = new Array;
-//     let concernAdder = 0;
-//     let newTimeArray = new Array;
-//     let dataCount = 0;
-//     let dataMax = timeSpacing;
-
-//     const classmate = await Classmate.findById(DataID);
-    
-//     for (let i = 0; i < classmate.concernDegreeArray.length; i++) {
-//       if (dataCount < dataMax) {
-//         concernAdder += (Number)(classmate.concernDegreeArray[i]);
-//         dataCount += 1;
-//       }
-//       if (dataCount >= dataMax || i >= (classmate.concernDegreeArray.length - 1)) {
-
-//         let judgedConcern = 0;
-//         if ((concernAdder / dataCount) > 1) judgedConcern = 1;
-//         else if ((concernAdder / dataCount) < 0) judgedConcern = 0;
-//         else judgedConcern = (Math.round((concernAdder / dataCount) * 10)) / 10;
-
-//         newConcernArray.push(judgedConcern);
-//         newTimeArray.push(classmate.timeLineArray[i]);
-//         dataCount = 0;
-//         concernAdder = 0;
-//       }
-//     }
-
-//     res.send({
-//       "studentName": classmate.studentName,
-//       "concernArray": newConcernArray,
-//       "timeLineArray": newTimeArray
-//     });
-//   })
-// )
-
-
-// teacherRouter.post(
-//   "/getAllConcernCalcDiagram",
-//   expressAsyncHandler(async (req, res) => {
-
-//     const { classroomMeetID, timeSpacing } = req.body;
-//     const classroom = await Classroom.findOne({ classroomMeetID });
-//     if (!classroom) {
-//       res.send("無此課堂資訊");
-//     }
-
-//     const concernLimit1 = 0.5;
-//     const concernLimit2 = 0.8;
-
-//     const startTime = classroom.startTime;
-//     const endTime = classroom.endTime;
-
-//     let newTimelineArray = new Array;
-//     do {
-//       if (newTimelineArray.length === 0) {
-//         newTimelineArray.push(DateToInt(startTime))
-//       }
-//       else {
-//         let newTime = newTimelineArray[newTimelineArray.length - 1] + timeSpacing;
-
-//         if (newTime % 100 >= 60) { newTime += 40; }
-//         if (newTime % 10000 >= 6000) { newTime += 4000; }
-//         if (newTime / 10000 >= 24) { newTime -= 240000; }
-
-//         if (newTime > DateToInt(endTime)) newTime = DateToInt(endTime)
-
-//         newTimelineArray.push(newTime);
-//       }
-//     } while (newTimelineArray[newTimelineArray.length - 1] < DateToInt(endTime));
-
-//     let redConcernCountArray = new Array(newTimelineArray.length);
-//     let yellowConcernCountArray = new Array(newTimelineArray.length);
-//     let greenConcernCountArray = new Array(newTimelineArray.length);
-//     redConcernCountArray.fill(0);
-//     yellowConcernCountArray.fill(0);
-//     greenConcernCountArray.fill(0);
-
-//     const classmates = await Classmate.find({
-//       "_id" : {
-//         "$in" : classroom.studentDataIDList
-//        }
-//     });
-//     classmates.map(classmate => {
-//       let concernAdder = 0;
-//       let dataCount = 0;
-//       let index = 0;
-
-//       for (let i = 0; i < classmate.timeLineArray.length; i++) {
-//         if (DateToInt(classmate.timeLineArray[i]) >= newTimelineArray[index] && DateToInt(classmate.timeLineArray[i]) < newTimelineArray[index + 1]) {
-//           concernAdder += (Number)(classmate.concernDegreeArray[i]);
-//           dataCount += 1;
-//         }
-//         else if (DateToInt(classmate.timeLineArray[i]) >= newTimelineArray[index + 1]) {
-//           let averageConcern = concernAdder / dataCount;
-//           if (averageConcern < concernLimit1) redConcernCountArray[index] += 1;
-//           else if (averageConcern >= concernLimit1 && averageConcern < concernLimit2) { yellowConcernCountArray[index] += 1; }
-//           else greenConcernCountArray[index] += 1;
-
-//           concernAdder = 0; dataCount = 0;
-//           index += 1;
-//         }
-//       }
-//     })
-
-//     for (let i = 0; i < newTimelineArray.length; i++) {
-//       newTimelineArray[i] = IntToDate(newTimelineArray[i]);
-//     }
-
-//     res.send({
-//       timelineArray: newTimelineArray,
-//       redConcernCountArray: redConcernCountArray,
-//       yellowConcernCountArray: yellowConcernCountArray,
-//       greenConcernCountArray: greenConcernCountArray
-//     });
-//   })
-// )
-
-// function DateToInt(dateString) {
-
-//   if (typeof dateString != "string") { return dateString; }
-
-//   let newDateString = "";
-//   let index = 0;
-
-//   do {
-//     if (dateString[index + 1] === ":") {
-//       newDateString += "0";
-//       newDateString += dateString[index];
-//       index += 2;
-//     }
-//     else if (index >= dateString.length - 1) {
-//       newDateString += "0";
-//       newDateString += dateString[index];
-//       index += 2;
-//     }
-//     else if (dateString[index] != ":" && dateString[index + 1] != ":") {
-//       newDateString += dateString[index];
-//       newDateString += dateString[index + 1];
-//       index += 3;
-//     }
-//   } while (index < dateString.length);
-
-//   return (Number)(newDateString);
-// }
-// function IntToDate(number) {
-
-//   if (typeof number != "number") { console.log("NOT"); return number; }
-
-//   let newDateString = "";
-
-//   let hour = parseInt(number / 10000);
-//   if (hour >= 10) newDateString += hour;
-//   else if (hour === 0) newDateString += "00";
-//   else { newDateString += "0"; newDateString += hour };
-
-//   newDateString += ":";
-
-//   let min = parseInt((number % 10000) / 100);
-//   if (min >= 10) newDateString += min;
-//   else if (min === 0) newDateString += "00";
-//   else { newDateString += "0"; newDateString += min };
-
-//   newDateString += ":";
-
-//   let second = parseInt(number % 100);
-//   if (second >= 10) newDateString += second;
-//   else if (second === 0) newDateString += "00";
-//   else { newDateString += "0"; newDateString += second };
-
-
-//   return newDateString;
-// }
-
-
 
 module.exports = teacherRouter;
