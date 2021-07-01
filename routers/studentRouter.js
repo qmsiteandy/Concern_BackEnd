@@ -98,7 +98,7 @@ studentRouter.put(
         if(updateClassmate){
 
           updateClassmate.newConcernDegree = parseFloat(concernDegree.toFixed(4));
-          updateClassmate.concernDegreeArray.push(parseFloat(concernDegre.toFixed(4)));
+          updateClassmate.concernDegreeArray.push(parseFloat(concernDegree.toFixed(4)));
           updateClassmate.timeLineArray.push(Date.now()); //以UNIX時間格式儲存
           
           classroom.classmates.splice(indexInList, 1, updateClassmate);
