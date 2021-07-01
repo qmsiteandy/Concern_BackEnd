@@ -59,18 +59,18 @@ studentRouter.put(
       else{
         let updateClassmate = classroom.classmates[indexInList];
 
-        // updateClassmate.newConcernDegree = parseInt(concernDegree);
-        // updateClassmate.concernDegreeArray.push(parseInt(concernDegree));
-        // updateClassmate.timeLineArray.push(Date.now()); //以UNIX時間格式儲存
+        updateClassmate.newConcernDegree = parseInt(concernDegree);
+        updateClassmate.concernDegreeArray.push(parseInt(concernDegree));
+        updateClassmate.timeLineArray.push(Date.now()); //以UNIX時間格式儲存
 
-        //製作測試數據
-        let newTime = classroom.startTime;
-        for(let i = 0; i<10000; i++){
+        // //製作測試數據
+        // let newTime = classroom.startTime;
+        // for(let i = 0; i<10000; i++){
 
-          newTime += 250;
-          updateClassmate.concernDegreeArray.push(Math.random() * 0.4 + 0.6);
-          updateClassmate.timeLineArray.push(newTime); //以UNIX時間格式儲存
-        }
+        //   newTime += 250;
+        //   updateClassmate.concernDegreeArray.push(Math.random() * 0.4 + 0.6);
+        //   updateClassmate.timeLineArray.push(newTime); //以UNIX時間格式儲存
+        // }
         
         classroom.classmates.splice(indexInList, 1, updateClassmate);
 
