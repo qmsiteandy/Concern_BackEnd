@@ -95,14 +95,19 @@ studentRouter.put(
       else{
         let updateClassmate = classroom.classmates[indexInList];
 
-        updateClassmate.newConcernDegree = parseFloat(concernDegree.toFixed(4));
-        updateClassmate.concernDegreeArray.push(parseFloat(concernDegre.toFixed(4)));
-        updateClassmate.timeLineArray.push(Date.now()); //以UNIX時間格式儲存
-        
-        classroom.classmates.splice(indexInList, 1, updateClassmate);
+        if(updateClassmate){
 
-        const updatedClassroom = await classroom.save();
-        res.status(200).send("上傳成功");
+          updateClassmate.newConcernDegree = parseFloat(concernDegree.toFixed(4));
+          updateClassmate.concernDegreeArray.push(parseFloat(concernDegre.toFixed(4)));
+          updateClassmate.timeLineArray.push(Date.now()); //以UNIX時間格式儲存
+          
+          classroom.classmates.splice(indexInList, 1, updateClassmate);
+
+          const updatedClassroom = await classroom.save();
+          res.status(200).send("上傳成功");
+        }else{
+          res.status(403).send("無此學生");
+        } 
       }
     }else{
       res.status(404).send("無此課堂教室");
