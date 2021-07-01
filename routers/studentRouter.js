@@ -48,6 +48,42 @@ studentRouter.post(
 );
 
 studentRouter.put(
+  "/createFakeConcernData",
+  expressAsyncHandler(async (req, res) => {
+    const { classroomDataID, indexInList, dataCount } = req.body;
+    const classroom = await Classroom.findById(classroomDataID);
+
+    if(classroom){
+      if(classroom.isClassing == false) res.status(400).send("課程尚未開始");
+      else if(classroom.isResting == true) res.status(401).send("下課休息時間");
+      else{
+        let updateClassmate = classroom.classmates[indexInList];
+        if(updateClassmate){
+
+          let newTime = classroom.startTime;
+          for(let i = 0; i < dataCount; i++){
+
+            newTime += 250;
+            updateClassmate.concernDegreeArray.push(parseFloat((Math.random() * 0.5 + 0.6).toFixed(4)));
+            updateClassmate.timeLineArray.push(newTime); //以UNIX時間格式儲存
+          }
+          
+          classroom.classmates.splice(indexInList, 1, updateClassmate);
+
+          const updatedClassroom = await classroom.save();
+          res.status(200).send("上傳成功");
+
+        }else{
+          res.status(403).send("無此學生");
+        } 
+      }
+    }else{
+      res.status(404).send("無此課堂教室");
+    }
+  })
+);
+
+studentRouter.put(
   "/upload",
   expressAsyncHandler(async (req, res) => {
     const { classroomDataID, indexInList, concernDegree } = req.body;
@@ -59,18 +95,9 @@ studentRouter.put(
       else{
         let updateClassmate = classroom.classmates[indexInList];
 
-        updateClassmate.newConcernDegree = parseInt(concernDegree);
-        updateClassmate.concernDegreeArray.push(parseInt(concernDegree));
+        updateClassmate.newConcernDegree = parseFloat(concernDegree.toFixed(4));
+        updateClassmate.concernDegreeArray.push(parseFloat(concernDegre.toFixed(4)));
         updateClassmate.timeLineArray.push(Date.now()); //以UNIX時間格式儲存
-
-        // //製作測試數據
-        // let newTime = classroom.startTime;
-        // for(let i = 0; i<10000; i++){
-
-        //   newTime += 250;
-        //   updateClassmate.concernDegreeArray.push(Math.random() * 0.4 + 0.6);
-        //   updateClassmate.timeLineArray.push(newTime); //以UNIX時間格式儲存
-        // }
         
         classroom.classmates.splice(indexInList, 1, updateClassmate);
 
