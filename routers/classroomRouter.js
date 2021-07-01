@@ -64,6 +64,111 @@ classroomRouter.post(
 );
 
 classroomRouter.post(
+  "/getStatisticsDiagram",
+  expressAsyncHandler(async (req, res) => {
+    const { classroomDataID, timeSpacing } = req.body;
+    const classroom = await Classroom.findById(classroomDataID);
+
+    const concernLimit0 = 0.5, concernLimit1 = 0.8;
+
+    if (classroom) {
+      if (classroom.classmates.length > 0) {
+
+        let result = new Array();
+
+        classroom.classmates.forEach((classmate) => {
+          if(classmate.timeLineArray.length > 0) {
+            
+            //整理專注時序表
+            let diagramConcernAdder = 0;
+            let aveCounter = 0;
+            let dataIndex = 0;
+            let timeSpacing_millis = timeSpacing * 1000; 
+            let endTime = classroom.endTime || classmate.timeLineArray[classmate.timeLineArray.length - 1];
+
+            if (result.length == 0){
+              result.push({
+                time: classroom.startTime,
+                aveConcernDegree: null,
+                concentratedCount: 0,
+                normalCount: 0,
+                unconcentratedCount: 0,
+                dataCount: 0
+              });       
+            } 
+            //將result時間軸從startTime拉到endTime
+            while(result[result.length - 1].time + timeSpacing_millis < endTime){
+              result.push({
+                time: result[result.length-1].time + timeSpacing_millis,
+                aveConcernDegree: null,
+                concentratedCount: 0,
+                normalCount: 0,
+                unconcentratedCount: 0,
+                dataCount: 0
+              });
+            }
+
+
+            //定位此classmate的第一筆資料會在result的哪個index
+            let resultIndex = 0;
+            for(let i = 0; i < result.length - 1 ; i++){
+              if(result[i].time <= classmate.timeLineArray[0] && classmate.timeLineArray[0] < (result[i+1].time || endTime)){
+                resultIndex = i; break;
+              }
+            }
+
+            //將學生資料放入result計算
+            do {
+
+              while (classmate.timeLineArray[dataIndex] < result[resultIndex].time + timeSpacing_millis && dataIndex < classmate.timeLineArray.length) {
+                diagramConcernAdder += parseFloat(classmate.concernDegreeArray[dataIndex]);
+                aveCounter += 1;
+              
+                dataIndex += 1;
+              }
+
+              let classmateAveConcern = parseFloat((diagramConcernAdder / aveCounter).toFixed(4));
+
+              //紀錄專注狀態人數
+              if(classmateAveConcern >= concernLimit1) result[resultIndex].concentratedCount += 1;
+              else if(classmateAveConcern >= concernLimit0) result[resultIndex].normalCount += 1;
+              else result[resultIndex].unconcentratedCount += 1;
+
+              //紀錄平均專注數值
+              let ratio = result[resultIndex].dataCount / (result[resultIndex].dataCount + 1);
+              let result_aveConcernDegree = result[resultIndex].aveConcernDegree || 0;
+              result[resultIndex].aveConcernDegree = parseFloat((result_aveConcernDegree * ratio + classmateAveConcern * (1 - ratio)).toFixed(4));
+
+              //紀錄資料筆數
+              result[resultIndex].dataCount += 1;
+
+
+              diagramConcernAdder = 0;
+              aveCounter = 0;
+
+              resultIndex += 1;
+
+            } while (dataIndex < classmate.timeLineArray.length - 1 && resultIndex < result.length);
+          }
+        });
+
+        let timeStringFormat = timeSpacing < 60 ? "hh:mm:ss" : "hh:mm" ;
+        for (let i = 0; i < result.length; i++) {
+          result[i].time = ConvertUNIXTimeToTimeString(timeStringFormat,result[i].time);
+        }
+
+        res.status(200).send(result);
+
+      } else {
+        res.status(403).send("此教室尚無學生資料");
+      }
+    } else {
+      res.status(404).send("尚無此教室");
+    }
+  })
+);
+
+classroomRouter.post(
   "/getPersonDiagramList",
   expressAsyncHandler(async (req, res) => {
     const { classroomDataID, timeSpacing } = req.body;
