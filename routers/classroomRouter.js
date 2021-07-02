@@ -1,5 +1,6 @@
 const express = require("express");
 const expressAsyncHandler = require("express-async-handler");
+const Course = require("../models/courseModel");
 const Classroom = require("../models/classroomModel");
 const classroomRouter = express.Router();
 const { response } = require("express");
@@ -59,6 +60,87 @@ classroomRouter.post(
       res
         .status(200)
         .send("第" + (rollcallIndex + 1) + "次點名 ：" + duration + "s");
+    } else {
+      res.status(404).send("尚無此教室");
+    }
+  })
+);
+
+classroomRouter.post(
+  "/getRollcallStatus",
+  expressAsyncHandler(async (req, res) => {
+    const { classroomDataID } = req.body;
+    const classroom = await Classroom.findById(classroomDataID);
+    if (classroom) {
+
+      let rollcallCount = classroom.rollcallTime.length;
+      let sign_attend = 1,  //出席
+        sign_miss = 0, //錯過點名
+        sign_personalLeave = -1;  //請假
+
+      let result = {
+        isLinkToCourse: classroom.isLinkToCourse,
+        rollcallCount: rollcallCount,
+        rollcallTime: classroom.rollcallTime,
+        classmatesInList: new Array(),
+        classmatesUnlisted: new Array()
+      }
+
+      //將登記在course的學生資料加入
+      if(classroom.isLinkToCourse){
+        const course = await Course.findById(classroom.courseDataID);
+        if(course){
+          course.classmates.forEach(classmate => {
+            let isPersonalLeave = course.courseWeeks[classroom.courseWeekIndex].personalLeaveIDList.find(elemenet => { elemenet == classmate.studentID})? true: false;
+            result.classmatesInList.push({
+              studentName: classmate.studentName,
+              studentID: classmate.studentID,
+              personalLeave: isPersonalLeave,
+              attendance: new Array(rollcallCount).fill(sign_miss)
+            });
+          });
+        }else{
+          res.status(404).send("無符合courseDataID的課程資料");
+        }
+      }
+
+      //將classroom資料填入
+      classroom.classmates.forEach(classmate => {
+        let indexClassmatesInList = result.classmatesInList.findIndex(element => { return element.studentID == classmate.studentID});
+        
+        //此學生是登錄在course中的
+        if(indexClassmatesInList >= 0) {
+          for(let i = 0; i < classmate.attendance.length; i++){
+            if(classmate.attendance[i] == true) result.classmatesInList[indexClassmatesInList].attendance[i] = sign_attend;
+          }      
+        }
+        //此學生是不在course中的
+        else{
+          let newAttendance = new Array(rollcallCount);
+          newAttendance.fill(sign_miss);
+          for(let i = 0; i < classmate.attendance.length; i++){
+            if(classmate.attendance[i] == true) newAttendance[i] = sign_attend;
+          } 
+
+          result.classmatesUnlisted.push({
+            studentName: classmate.studentName,
+            studentID: classmate.studentID,
+            attendance: newAttendance
+          });     
+        }
+      });
+
+      //更新有請假的人的資料
+      result.classmatesInList.forEach(classmate => {
+        if(classmate.personalLeave == true) classmate.attendance.fill(sign_personalLeave);
+      });
+
+      //將沒在名單的學生 依據學號排序
+      result.classmatesUnlisted = SortClassmateDataByID(result.classmatesUnlisted);
+
+
+      res.status(200).send(result);
+
     } else {
       res.status(404).send("尚無此教室");
     }
@@ -493,11 +575,14 @@ function ConvertUNIXTimeToTimeString(format, dateNumber) {
 
 function GetTime_H_M() {
   newTime = new Date();
-  return (
-    newTime.getHours() +
+
+  let timeString = 
+    ((newTime.getHours() < 10 ? "0" : "") + newTime.getHours()) +
     ":" +
     ((newTime.getMinutes() < 10 ? "0" : "") + newTime.getMinutes())
-  );
+
+    console.log(newTime, timeString);
+  return timeString;
 }
 
 module.exports = classroomRouter;

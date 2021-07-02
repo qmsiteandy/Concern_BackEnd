@@ -1,5 +1,6 @@
 const express = require("express");
 const expressAsyncHandler = require("express-async-handler");
+const Teacher = require('../models/teacherModel');
 const Course = require("../models/courseModel");
 const Classroom = require("../models/classroomModel");
 const courseRouter = express.Router();
@@ -18,6 +19,45 @@ courseRouter.post(
   })
 );
 
+courseRouter.post(
+  "/addCourse",
+  expressAsyncHandler(async (req, res) => {
+    const { teacherDataID, courseName } = req.body;
+
+    teacher = await Teacher.findById(teacherDataID);
+    if(teacher){
+      let courseExisted = false;
+      teacher.courses.forEach(element => {
+        if(element.courseName == courseName) courseExisted = true;
+      });
+
+      if(courseExisted){res.status(403).send("此課程已存在");}
+      else{
+        const newCourse = new Course({
+          "teacherName": teacher.teacherName,
+          "teacherID": teacher.teacherID,
+          "courseName": courseName
+        })
+        const uploadedCourse = await newCourse.save();
+
+        teacher.courses.push({
+            "courseDataID": uploadedCourse._id,
+            "courseName": uploadedCourse.courseName
+        })
+        const uploadedTeacher = await teacher.save()
+
+        res.status(201).send({
+          "teacherName": uploadedTeacher.teacherName,
+          "teacherID": uploadedTeacher.teacherID,
+          "courses": uploadedTeacher.courses
+        });
+      }
+    }else{
+      res.status(404).send("尚無此位老師");
+    }
+  })
+);
+
 //#region ==========課程週設定部分==========
 
 courseRouter.post(
@@ -28,21 +68,32 @@ courseRouter.post(
     if (course) {
       const classroom = await Classroom.findById(classroomDataID);
       if(classroom){
-        newTime = new Date();
-        course.courseWeeks.push({
-          weekName: newTime.getFullYear() + "/" + (newTime.getMonth()+1) + "/" + newTime.getDate(),
-          classroomDataID: classroomDataID
-        });
-        const uploadedCourse = await course.save();
 
-        classroom.courseName = course.courseName;
-        classroom.isLinkToCourse = true;
-        const uploadedClassroom = await classroom.save();
+        if(classroom.isLinkToCourse == false){
 
-        res.status(201).send({
-          courseName: uploadedCourse.courseName,
-          weekName: uploadedCourse.courseWeeks[uploadedCourse.courseWeeks.length-1].weekName,
-        });
+          newTime = new Date();
+          course.courseWeeks.push({
+            weekName: newTime.getFullYear() + "/" + (newTime.getMonth()+1) + "/" + newTime.getDate(),
+            classroomDataID: classroomDataID,
+            personalLeaveIDList: new Array()
+          });
+          const uploadedCourse = await course.save();
+
+          classroom.courseName = course.courseName;
+          classroom.isLinkToCourse = true;
+          classroom.courseDataID = course._id;
+          classroom.courseWeekIndex = course.courseWeeks.length-1;
+          const uploadedClassroom = await classroom.save();
+
+          res.status(201).send({
+            courseName: uploadedCourse.courseName,
+            courseWeekIndex: uploadedClassroom.courseWeekIndex,
+            weekName: uploadedCourse.courseWeeks[uploadedCourse.courseWeeks.length-1].weekName,
+          });
+
+        }else{
+          res.status(400).send("此教室已與courseDataID:"+classroom.courseDataID+" 連結，無法重複連結");
+        }
       }else{
         res.status(403).send("尚無此教室");
       }
@@ -180,11 +231,11 @@ courseRouter.post(
         if (element.studentID == studentID) studentExisted = true;
       });
 
-      if (studentExisted == true) res.status(403).send("此學號已存在");
+      if (studentExisted == true) res.status(403).send("此學號已在名單中");
       else {
         course.classmates.push({
-          studentName: studentName,
-          studentGoogleName: studentGoogleName || "",
+          studentName: studentName || studentGoogleName,
+          studentGoogleName: studentGoogleName || studentName,
           studentID: studentID,
         });
         //將學生名單依照學號排序

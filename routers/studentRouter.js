@@ -9,7 +9,7 @@ const concernLimit0 = 0.5, concernLimit1 = 0.8;
 studentRouter.post(
   "/enterClassroom",
   expressAsyncHandler(async (req, res) => {
-    const { classroomMeetID, studentName, studentID } = req.body;
+    const { classroomMeetID, studentName, studentGoogleName, studentID } = req.body;
 
     const classroom = await Classroom.findOne({
       'classroomMeetID': classroomMeetID
@@ -20,10 +20,10 @@ studentRouter.post(
       //此學生尚未在名單中，需創建
       if(indexInList == -1){
         const newClassmate = {
-          studentName:studentName,
+          studentName:studentName || studentGoogleName,
+          studentGoogleName: studentGoogleName || studentName,
           studentID: studentID,
           rollcall: new Array(),
-          personalLeave: false,
           newConcernDegree: 0,
           concernDegreeArray: new Array(),
           timeLineArray: new Array()
@@ -127,11 +127,11 @@ studentRouter.post(
       
       let updateClassmate = classroom.classmates[indexInList];
 
-      while(updateClassmate.rollcall.length <= rollcallIndex){
-        if(rollcallIndex - updateClassmate.rollcall.length > 0)
-          updateClassmate.rollcall.push(false);
+      while(updateClassmate.attendance.length <= rollcallIndex){
+        if(rollcallIndex - updateClassmate.attendance.length > 0)
+          updateClassmate.attendance.push(false);
         else
-          updateClassmate.rollcall.push(true);
+          updateClassmate.attendance.push(true);
       }
       
       classroom.classmates.splice(indexInList, 1, updateClassmate);
@@ -142,7 +142,7 @@ studentRouter.post(
         result.push({
           "rollcallIndex": i,
           "rollcallTime": updatedClassroom.rollcallTime[i],
-          "rollcallStatus": updatedClassroom.classmates[indexInList].rollcall[i]
+          "rollcallStatus": updatedClassroom.classmates[indexInList].attendance[i]
         })
       }
       res.status(200).send(result);

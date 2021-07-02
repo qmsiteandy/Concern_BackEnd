@@ -6,8 +6,11 @@ const classroomSchema = new mongoose.Schema(
     courseName: { type: String},
     weekName: { type: String},
     classroomMeetID: { type: String},
-    isLinkToCourse: {type: Boolean, default: false },
 
+    isLinkToCourse: {type: Boolean, default: false },
+    courseDataID: { type: String},
+    courseWeekIndex: {type: Number},
+ 
     isClassing:{type: Boolean, default: false },
     date:{type: String},
     startTime:{type: Number},
@@ -23,9 +26,9 @@ const classroomSchema = new mongoose.Schema(
 
     classmates: {type: Array,
       studentName: { type: String, required: true},
+      studentGoogleName: { type: String, required: true},
       studentID: { type: String, required: true},
-      rollcall:{ type: Array},
-      personalLeave:{ type: Boolean, default: false },
+      attendance:{ type: Array},
       newConcernDegree:{ type: Number},
       concernDegreeArray:{ type: Array},
       timeLineArray:{ type: Array},

@@ -1,7 +1,6 @@
 const express = require('express');
 const expressAsyncHandler = require("express-async-handler");
 const Teacher = require('../models/teacherModel');
-const Course = require('../models/courseModel');
 const Classroom = require('../models/classroomModel');
 const teacherRouter = express.Router();
 const { response } = require('express');
@@ -221,44 +220,7 @@ teacherRouter.post(
   })
 );
 
-teacherRouter.post(
-  "/addCourse",
-  expressAsyncHandler(async (req, res) => {
-    const { teacherDataID, courseName } = req.body;
 
-    teacher = await Teacher.findById(teacherDataID);
-    if(teacher){
-      let courseExisted = false;
-      teacher.courses.forEach(element => {
-        if(element.courseName == courseName) courseExisted = true;
-      });
-
-      if(courseExisted){res.status(403).send("此課程已存在");}
-      else{
-        const newCourse = new Course({
-          "teacherName": teacher.teacherName,
-          "teacherID": teacher.teacherID,
-          "courseName": courseName
-        })
-        const uploadedCourse = await newCourse.save();
-
-        teacher.courses.push({
-            "courseDataID": uploadedCourse._id,
-            "courseName": uploadedCourse.courseName
-        })
-        const uploadedTeacher = await teacher.save()
-
-        res.status(201).send({
-          "teacherName": uploadedTeacher.teacherName,
-          "teacherID": uploadedTeacher.teacherID,
-          "courses": uploadedTeacher.courses
-        });
-      }
-    }else{
-      res.status(404).send("尚無此位老師");
-    }
-  })
-);
 //#endregion ==========進階功能==========
 
 
