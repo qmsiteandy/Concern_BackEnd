@@ -67,7 +67,7 @@ classroomRouter.put(
           course.courseWeeks.splice(classroom.courseWeekIndex, 1, updateCourseWeek);
           const updatedCourse = await course.save();
         }
-        res.status(200).send(studentID + " 已取消請假");
+        res.status(201).send(studentID + " 已取消請假");
       }
     } else {
       res.status(404).send("尚無此教室");
