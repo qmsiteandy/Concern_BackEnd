@@ -159,9 +159,6 @@ classroomRouter.post(
         //此學生是登錄在course中的
         if(indexClassmatesInList >= 0) {
 
-
-
-
           for(let i = 0; i < classmate.attendance.length; i++){
             result.classmatesInList[indexClassmatesInList].attendance[classmate.attendance[i]] = sign_attend;
           }      

@@ -23,7 +23,7 @@ studentRouter.post(
           studentName:studentName || studentGoogleName,
           studentGoogleName: studentGoogleName || studentName,
           studentID: studentID,
-          rollcall: new Array(),
+          attendance: new Array(),
           newConcernDegree: 0,
           concernDegreeArray: new Array(),
           timeLineArray: new Array()
