@@ -118,34 +118,24 @@ studentRouter.put(
 studentRouter.post(
   "/rollcall",
   expressAsyncHandler(async (req, res) => {
-    const { classroomDataID, indexInList } = req.body;
+    const { classroomDataID, indexInList, rollcallIndex } = req.body;
     const classroom = await Classroom.findById(classroomDataID);
 
     if(classroom){
-
-      let rollcallIndex = classroom.rollcallTime.length -1;
+      if(rollcallIndex < classroom.rollcallTime.length){
+        //let rollcallIndex = classroom.rollcallTime.length -1;
       
-      let updateClassmate = classroom.classmates[indexInList];
+        let updateClassmate = classroom.classmates[indexInList];
 
-      while(updateClassmate.attendance.length <= rollcallIndex){
-        if(rollcallIndex - updateClassmate.attendance.length > 0)
-          updateClassmate.attendance.push(false);
-        else
-          updateClassmate.attendance.push(true);
-      }
-      
-      classroom.classmates.splice(indexInList, 1, updateClassmate);
-      const updatedClassroom = await classroom.save();
+        updateClassmate.attendance.push(rollcallIndex);
+        
+        classroom.classmates.splice(indexInList, 1, updateClassmate);
+        const updatedClassroom = await classroom.save();
 
-      let result = new Array();
-      for(let i = 0; i < updatedClassroom.rollcallTime.length; i++){
-        result.push({
-          "rollcallIndex": i,
-          "rollcallTime": updatedClassroom.rollcallTime[i],
-          "rollcallStatus": updatedClassroom.classmates[indexInList].attendance[i]
-        })
+        res.status(200).send("第" + (rollcallIndex+1) + "次點名簽到完成");
+      }else{
+        res.status(403).send("第" + (rollcallIndex+1) + "次點名尚未開始");
       }
-      res.status(200).send(result);
     }else{
       res.status(404).send("無此課堂教室");
     }

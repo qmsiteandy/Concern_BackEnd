@@ -38,6 +38,43 @@ classroomRouter.post(
   })
 );
 
+classroomRouter.put(
+  "/setPersonalLeave",
+  expressAsyncHandler(async (req, res) => {
+    const { classroomDataID, studentID, truefalse } = req.body;
+    const classroom = await Classroom.findById(classroomDataID);
+    if (classroom) {
+      const course = await Course.findById(classroom.courseDataID);
+
+      let updateCourseWeek = course.courseWeeks[classroom.courseWeekIndex];
+      let indexInLeaveIDList = updateCourseWeek.personalLeaveIDList.findIndex(elemenet => { return elemenet == studentID});
+      //標註請假
+      if(truefalse == true){
+        if(indexInLeaveIDList < 0){
+          updateCourseWeek.personalLeaveIDList.push(studentID);
+
+          course.courseWeeks.splice(classroom.courseWeekIndex, 1, updateCourseWeek);
+          const updatedCourse = await course.save();
+        }
+
+        res.status(200).send(studentID + " 請假登記完成");
+      }
+      //取消請假
+      else{
+        if(indexInLeaveIDList >= 0){
+          updateCourseWeek.personalLeaveIDList.splice(indexInLeaveIDList, 1);
+
+          course.courseWeeks.splice(classroom.courseWeekIndex, 1, updateCourseWeek);
+          const updatedCourse = await course.save();
+        }
+        res.status(200).send(studentID + " 已取消請假");
+      }
+    } else {
+      res.status(404).send("尚無此教室");
+    }
+  })
+);
+
 classroomRouter.post(
   "/startRollcall",
   expressAsyncHandler(async (req, res) => {
@@ -80,6 +117,12 @@ classroomRouter.post(
 
       let result = {
         isLinkToCourse: classroom.isLinkToCourse,
+
+        shouldAttendCount: 0,
+        attentCount: 0,
+        personalLeaveCount: 0,
+        absenceCount: 0,
+
         rollcallCount: rollcallCount,
         rollcallTime: classroom.rollcallTime,
         classmatesInList: new Array(),
@@ -91,16 +134,21 @@ classroomRouter.post(
         const course = await Course.findById(classroom.courseDataID);
         if(course){
           course.classmates.forEach(classmate => {
-            let isPersonalLeave = course.courseWeeks[classroom.courseWeekIndex].personalLeaveIDList.find(elemenet => { elemenet == classmate.studentID})? true: false;
+            let isPersonalLeave = course.courseWeeks[classroom.courseWeekIndex].personalLeaveIDList.findIndex(elemenet => { return elemenet == classmate.studentID}) >= 0 ? true: false;
+
             result.classmatesInList.push({
               studentName: classmate.studentName,
               studentID: classmate.studentID,
+              hasEnteredClassroom: false,
               personalLeave: isPersonalLeave,
               attendance: new Array(rollcallCount).fill(sign_miss)
             });
           });
+
+          //應到人數
+          result.shouldAttendCount = course.classmates.length;
         }else{
-          res.status(404).send("無符合courseDataID的課程資料");
+          res.status(403).send("無符合courseDataID的課程資料");
         }
       }
 
@@ -110,16 +158,24 @@ classroomRouter.post(
         
         //此學生是登錄在course中的
         if(indexClassmatesInList >= 0) {
+
+
+
+
           for(let i = 0; i < classmate.attendance.length; i++){
-            if(classmate.attendance[i] == true) result.classmatesInList[indexClassmatesInList].attendance[i] = sign_attend;
+            result.classmatesInList[indexClassmatesInList].attendance[classmate.attendance[i]] = sign_attend;
           }      
+          //登記有加入會議
+          result.classmatesInList[indexClassmatesInList].hasEnteredClassroom = true;
+          //紀錄實到人數
+          result.attentCount += 1;
         }
         //此學生是不在course中的
         else{
           let newAttendance = new Array(rollcallCount);
           newAttendance.fill(sign_miss);
           for(let i = 0; i < classmate.attendance.length; i++){
-            if(classmate.attendance[i] == true) newAttendance[i] = sign_attend;
+            newAttendance[classmate.attendance[i]] = sign_attend;
           } 
 
           result.classmatesUnlisted.push({
@@ -132,15 +188,21 @@ classroomRouter.post(
 
       //更新有請假的人的資料
       result.classmatesInList.forEach(classmate => {
-        if(classmate.personalLeave == true) classmate.attendance.fill(sign_personalLeave);
+        if(classmate.personalLeave == true && classmate.hasEnteredClassroom == false) {
+          //attendance陣列紀錄請假符號
+          classmate.attendance.fill(sign_personalLeave);
+          //紀錄請假人數
+          result.personalLeaveCount += 1;
+        }
       });
 
       //將沒在名單的學生 依據學號排序
       result.classmatesUnlisted = SortClassmateDataByID(result.classmatesUnlisted);
 
+      //計算缺席人數
+      result.absenceCount = result.shouldAttendCount - result.attentCount - result.personalLeaveCount;
 
       res.status(200).send(result);
-
     } else {
       res.status(404).send("尚無此教室");
     }

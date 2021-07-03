@@ -10,7 +10,6 @@ const courseSchema = new mongoose.Schema(
         studentName: { type: String},
         studentGoogleName: { type: String},
         studentID: { type: String},
-        personalLeaveInCourseWeeks: {type: Array}
     },
     
     courseWeeks: {type: Array,
