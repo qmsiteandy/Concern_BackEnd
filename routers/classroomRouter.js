@@ -410,7 +410,6 @@ classroomRouter.post(
               });
             }
 
-
             //定位此classmate的第一筆資料會在result的哪個index
             let resultIndex = 0;
             for(let i = 0; i < result.length - 1 ; i++){
@@ -582,10 +581,10 @@ classroomRouter.post(
 
           
 
-          let timeStringFormat = timeSpacing < 60 ? "hh:mm:ss" : "hh:mm";
-          for (let i = 0; i < newTimeArray.length; i++) {
-            newTimeArray[i] = ConvertUNIXTimeToTimeString(timeStringFormat,newTimeArray[i]);
-          }
+          // let timeStringFormat = timeSpacing < 60 ? "hh:mm:ss" : "hh:mm";
+          // for (let i = 0; i < newTimeArray.length; i++) {
+          //   newTimeArray[i] = ConvertUNIXTimeToTimeString(timeStringFormat,newTimeArray[i]);
+          // }
 
           let attendTimePercentage = Math.floor(attendTimeAddr / (endTime - classroom.startTime) *100) + "%";
 
