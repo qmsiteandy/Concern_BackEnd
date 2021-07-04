@@ -46,14 +46,16 @@ classroomRouter.put(
     if (classroom) {
       const course = await Course.findById(classroom.courseDataID);
 
-      let updateCourseWeek = course.courseWeeks[classroom.courseWeekIndex];
+      let courseWeekIndex = course.courseWeeks.findIndex(week => { return week.classroomDataID == classroomDataID});
+
+      let updateCourseWeek = course.courseWeeks[courseWeekIndex];
       let indexInLeaveIDList = updateCourseWeek.personalLeaveIDList.findIndex(elemenet => { return elemenet == studentID});
       //標註請假
       if(truefalse == true){
         if(indexInLeaveIDList < 0){
           updateCourseWeek.personalLeaveIDList.push(studentID);
 
-          course.courseWeeks.splice(classroom.courseWeekIndex, 1, updateCourseWeek);
+          course.courseWeeks.splice(courseWeekIndex, 1, updateCourseWeek);
           const updatedCourse = await course.save();
         }
 
@@ -64,7 +66,7 @@ classroomRouter.put(
         if(indexInLeaveIDList >= 0){
           updateCourseWeek.personalLeaveIDList.splice(indexInLeaveIDList, 1);
 
-          course.courseWeeks.splice(classroom.courseWeekIndex, 1, updateCourseWeek);
+          course.courseWeeks.splice(courseWeekIndex, 1, updateCourseWeek);
           const updatedCourse = await course.save();
         }
         res.status(201).send(studentID + " 已取消請假");
@@ -133,8 +135,11 @@ classroomRouter.post(
       if(classroom.isLinkToCourse){
         const course = await Course.findById(classroom.courseDataID);
         if(course){
+
+          let courseWeekIndex = course.courseWeeks.findIndex(week => { return week.classroomDataID == classroomDataID});
+
           course.classmates.forEach(classmate => {
-            let isPersonalLeave = course.courseWeeks[classroom.courseWeekIndex].personalLeaveIDList.findIndex(elemenet => { return elemenet == classmate.studentID}) >= 0 ? true: false;
+            let isPersonalLeave = course.courseWeeks[courseWeekIndex].personalLeaveIDList.findIndex(elemenet => { return elemenet == classmate.studentID}) >= 0 ? true: false;
 
             result.classmatesInList.push({
               studentName: classmate.studentName,
@@ -339,11 +344,6 @@ classroomRouter.post(
             bestLasted: storage.bestLastedString
           })
         }
-
-        
-
-
-
         res.status(200).send(result);
 
       } else {

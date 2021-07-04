@@ -9,7 +9,6 @@ const classroomSchema = new mongoose.Schema(
 
     isLinkToCourse: {type: Boolean, default: false },
     courseDataID: { type: String},
-    courseWeekIndex: {type: Number},
  
     isClassing:{type: Boolean, default: false },
     date:{type: String},

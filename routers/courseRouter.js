@@ -82,12 +82,10 @@ courseRouter.post(
           classroom.courseName = course.courseName;
           classroom.isLinkToCourse = true;
           classroom.courseDataID = course._id;
-          classroom.courseWeekIndex = course.courseWeeks.length-1;
           const uploadedClassroom = await classroom.save();
 
           res.status(201).send({
             courseName: uploadedCourse.courseName,
-            courseWeekIndex: uploadedClassroom.courseWeekIndex,
             weekName: uploadedCourse.courseWeeks[uploadedCourse.courseWeeks.length-1].weekName,
           });
 
