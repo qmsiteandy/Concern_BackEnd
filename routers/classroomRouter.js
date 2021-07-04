@@ -237,20 +237,31 @@ classroomRouter.post(
             aveConcernAdder += classmate.concernDegreeArray[i];
 
             //用來記錄專注百分比，之後會除以concernDegreeArray.length
-            if (classmate.concernDegreeArray[i] >= concernLimit1)
+            if (classmate.concernDegreeArray[i] >= concernLimit1){
               concernCounter += 1;
+            }
 
-            //用來記錄最常持續時間
-            if (classmate.concernDegreeArray[i] >= concernLimit1) {
-              if (i < classmate.timeLineArray.length - 1) {
-                isLasting = true;
-                lastedTime +=
-                  classmate.timeLineArray[i + 1] - classmate.timeLineArray[i];
+            //用來記錄持續時間
+            if (i < classmate.timeLineArray.length - 1){
+              if (classmate.concernDegreeArray[i] >= concernLimit1){
+                //若兩筆數據間格超過10秒也視為中斷
+                timeSpace = classmate.timeLineArray[i + 1] - classmate.timeLineArray[i];
+                if(timeSpace < 10000){
+                  isLasting = true; 
+                  lastedTime += timeSpace;
+                }else{
+                  isLasting = false; 
+                  if (lastedTime > bestLasted) bestLasted = lastedTime;
+                  lastedTime = 0;
+                }
               }
-            } else if (
-              isLasting &&
-              classmate.concernDegreeArray[i] < concernLimit1
-            ) {
+              if (isLasting && classmate.concernDegreeArray[i] < concernLimit1) {              
+                isLasting = false; 
+                if (lastedTime > bestLasted) bestLasted = lastedTime;
+                lastedTime = 0;
+              }
+            }else{
+              isLasting = false;
               if (lastedTime > bestLasted) bestLasted = lastedTime;
               lastedTime = 0;
             }
@@ -487,17 +498,27 @@ classroomRouter.post(
             if (classmate.concernDegreeArray[i] >= concernLimit1)
               concernCounter += 1;
 
-            //用來記錄最常持續時間
-            if (classmate.concernDegreeArray[i] >= concernLimit1) {
-              if (i < classmate.timeLineArray.length - 1) {
-                isLasting = true;
-                lastedTime +=
-                  classmate.timeLineArray[i + 1] - classmate.timeLineArray[i];
+            //用來記錄持續時間
+            if (i < classmate.timeLineArray.length - 1){
+              if (classmate.concernDegreeArray[i] >= concernLimit1){
+                //若兩筆數據間格超過10秒也視為中斷
+                timeSpace = classmate.timeLineArray[i + 1] - classmate.timeLineArray[i];
+                if(timeSpace < 10000){
+                  isLasting = true; 
+                  lastedTime += timeSpace;
+                }else{
+                  isLasting = false; 
+                  if (lastedTime > bestLasted) bestLasted = lastedTime;
+                  lastedTime = 0;
+                }
               }
-            } else if (
-              isLasting &&
-              classmate.concernDegreeArray[i] < concernLimit1
-            ) {
+              if (isLasting && classmate.concernDegreeArray[i] < concernLimit1) {              
+                isLasting = false; 
+                if (lastedTime > bestLasted) bestLasted = lastedTime;
+                lastedTime = 0;
+              }
+            }else{
+              isLasting = false;
               if (lastedTime > bestLasted) bestLasted = lastedTime;
               lastedTime = 0;
             }
