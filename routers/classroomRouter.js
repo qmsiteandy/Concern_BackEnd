@@ -518,9 +518,7 @@ classroomRouter.post(
           }
 
           //計算專注平均
-          let aveConcern = parseFloat(
-            aveConcernAdder / classmate.concernDegreeArray.length
-          ).toFixed(2);
+          let aveConcern = parseFloat((aveConcernAdder / classmate.concernDegreeArray.length).toFixed(2));
 
           //計算專注百分比
           let concernPercentage =
