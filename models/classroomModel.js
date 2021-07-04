@@ -29,6 +29,7 @@ const classroomSchema = new mongoose.Schema(
       studentID: { type: String, required: true},
       attendance:{ type: Array, required: true},
       newConcernDegree:{ type: Number, required: true},
+      lastedUploadTime: { type: Number, required: true},
       concernDegreeArray:{ type: Array, required: true},
       timeLineArray:{ type: Array, required: true},
     },

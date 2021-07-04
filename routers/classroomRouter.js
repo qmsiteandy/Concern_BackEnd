@@ -106,6 +106,26 @@ classroomRouter.post(
 );
 
 classroomRouter.post(
+  "/x",
+  expressAsyncHandler(async (req, res) => {
+    const { classroomDataID, duration } = req.body;
+    const classroom = await Classroom.findById(classroomDataID);
+    if (classroom) {
+
+      classroom.classmates.forEach(classmate => {
+        classmate.lastedUploadTime = Date.now();
+      })
+
+      await classroom.save();
+      
+      res.send("完成")
+    } else {
+      res.status(404).send("尚無此教室");
+    }
+  })
+);
+
+classroomRouter.post(
   "/getRollcallStatus",
   expressAsyncHandler(async (req, res) => {
     const { classroomDataID } = req.body;
@@ -367,6 +387,7 @@ classroomRouter.post(
         let result = new Array();
 
         classroom.classmates.forEach((classmate) => {
+    
           if(classmate.timeLineArray.length > 0) {
             
             //整理專注時序表

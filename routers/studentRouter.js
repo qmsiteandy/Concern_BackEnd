@@ -25,6 +25,7 @@ studentRouter.post(
           studentID: studentID,
           attendance: new Array(),
           newConcernDegree: 0,
+          lastedUploadTime: 0,
           concernDegreeArray: new Array(),
           timeLineArray: new Array()
         };
@@ -89,22 +90,25 @@ studentRouter.put(
     const { classroomDataID, indexInList, concernDegree } = req.body;
     const classroom = await Classroom.findById(classroomDataID);
 
+    const uploadDelay = 5000; //至少1秒後才能再次紀錄數據，以避免數據過多
+
     if(classroom){
       if(classroom.isClassing == false) res.status(400).send("課程尚未開始");
       else if(classroom.isResting == true) res.status(401).send("下課休息時間");
       else{
         let updateClassmate = classroom.classmates[indexInList];
-
         if(updateClassmate){
-
-          updateClassmate.newConcernDegree = concernDegree;
-          updateClassmate.concernDegreeArray.push(concernDegree);
-          updateClassmate.timeLineArray.push(Date.now()); //以UNIX時間格式儲存
-          
-          classroom.classmates.splice(indexInList, 1, updateClassmate);
-
-          const updatedClassroom = await classroom.save();
-          res.status(200).send("上傳成功");
+          if((Date.now() - updateClassmate.lastedUploadTime) > uploadDelay){
+            updateClassmate.newConcernDegree = concernDegree;
+            updateClassmate.lastedUploadTime = Date.now();
+            updateClassmate.concernDegreeArray.push(concernDegree);
+            updateClassmate.timeLineArray.push(Date.now()); //以UNIX時間格式儲存
+            
+            classroom.classmates.splice(indexInList, 1, updateClassmate);
+            const updatedClassroom = await classroom.save();
+                  console.log(updatedClassroom.lastedUploadTime);
+          }
+            res.status(200).send("上傳成功");         
         }else{
           res.status(403).send("無此學生");
         } 
