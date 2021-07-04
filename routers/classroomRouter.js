@@ -664,7 +664,6 @@ function GetTime_H_M() {
     ":" +
     ((newTime.getMinutes() < 10 ? "0" : "") + newTime.getMinutes())
 
-    console.log(newTime, timeString);
   return timeString;
 }
 
