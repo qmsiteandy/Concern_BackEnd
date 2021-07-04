@@ -274,15 +274,9 @@ classroomRouter.post(
           let concernPercentage = concernCounter / classmate.concernDegreeArray.length;
           let concernPercentageString = Math.floor((concernPercentage) * 100) + "%";
 
-          //最常持續時間顯示格式
-          let bestLastedString = "";
-          let hour = bestLasted / (60 * 60 * 1000);
-          bestLastedString += hour < 1 ? "0:" : hour + ":";
-          let min = Math.floor(bestLasted / (60 * 1000));
-          bestLastedString += min < 10 ? "0" + min + ":" : min + ":";
-          let second = Math.floor(bestLasted / 1000);
-          bestLastedString += second < 10 ? "0" + second : second;
-
+          //最常持續時間
+          let bestLastedString = ConvertMillisecondToTimeString("h:mm:ss", bestLasted);
+          
 
           classmateData.push({
             studentName: classmate.studentName,
@@ -534,14 +528,8 @@ classroomRouter.post(
               (concernCounter / classmate.concernDegreeArray.length) * 100
             ) + "%";
 
-          //最常持續時間顯示格式
-          let bestLastedString = "";
-          let hour = bestLasted / (60 * 60 * 1000);
-          bestLastedString += hour < 1 ? "0:" : hour + ":";
-          let min = Math.floor(bestLasted / (60 * 1000));
-          bestLastedString += min < 10 ? "0" + min + ":" : min + ":";
-          let second = Math.floor(bestLasted / 1000);
-          bestLastedString += second < 10 ? "0" + second : second;
+          //最常持續時間
+          let bestLastedString = ConvertMillisecondToTimeString("h:mm:ss", bestLasted);
 
           
           //紀錄參與時長
@@ -580,10 +568,10 @@ classroomRouter.post(
           } while (newTimeArray[newTimeArray.length - 1] + timeSpacing_millis < endTime);
 
           
-          // let timeStringFormat = timeSpacing < 60 ? "hh:mm:ss" : "hh:mm";
-          // for (let i = 0; i < newTimeArray.length; i++) {
-          //   newTimeArray[i] = ConvertUNIXTimeToTimeString(timeStringFormat,newTimeArray[i]);
-          // }
+          let timeStringFormat = timeSpacing < 60 ? "hh:mm:ss" : "hh:mm";
+          for (let i = 0; i < newTimeArray.length; i++) {
+            newTimeArray[i] = ConvertUNIXTimeToTimeString(timeStringFormat,newTimeArray[i]);
+          }
 
           let attendTimePercentage = Math.floor(attendTimeAddr / (endTime - classroom.startTime) *100) + "%";
 
@@ -651,6 +639,21 @@ function ConvertUNIXTimeToTimeString(format, dateNumber) {
     );
 
   return timeString;
+}
+
+function ConvertMillisecondToTimeString(format, millisecond){
+  let newTimeString = format;
+
+  let hour = millisecond / (60 * 60 * 1000);
+  newTimeString = newTimeString.replace("h", hour < 1 ? "0" : hour);
+
+  let min = Math.floor(millisecond / (60 * 1000));
+  newTimeString = newTimeString.replace("mm", min < 10 ? "0" + min : min);
+  
+  let second = Math.floor(millisecond / 1000);
+  newTimeString = newTimeString.replace("ss", second < 10 ? "0" + second : second);
+
+  return newTimeString;
 }
 
 function GetTime_H_M() {

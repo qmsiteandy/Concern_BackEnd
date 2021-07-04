@@ -161,7 +161,7 @@ studentRouter.post(
         //用來記錄最常持續時間
         let isLasting = false;
         let lastedTime = 0;
-        let bestlasted = 0;
+        let bestLasted = 0;
 
         for (let i = 0; i < classmate.timeLineArray.length; i++) {
           //用來記錄專注平均
@@ -182,7 +182,7 @@ studentRouter.post(
             isLasting &&
             classmate.concernDegreeArray[i] < concernLimit1
           ) {
-            if (lastedTime > bestlasted) bestlasted = lastedTime;
+            if (lastedTime > bestLasted) bestLasted = lastedTime;
             lastedTime = 0;
           }
         }
@@ -193,20 +193,12 @@ studentRouter.post(
         ).toFixed(2);
 
         //計算專注百分比
-        let concernPercentage =
-          Math.floor(
-            (concernCounter / classmate.concernDegreeArray.length) * 100
-          ) + "%";
+        let concernPercentage = Math.floor((concernCounter / classmate.concernDegreeArray.length) * 100) + "%";
 
-        //最常持續時間顯示格式
-        let bestlastedString = "";
-        let hour = bestlasted / (60 * 60 * 1000);
-        bestlastedString += hour < 1 ? "0:" : hour + ":";
-        let min = Math.floor(bestlasted / (60 * 1000));
-        bestlastedString += min < 10 ? "0" + min + ":" : min + ":";
-        let second = Math.floor(bestlasted / 1000);
-        bestlastedString += second < 10 ? "0" + second : second;
+        //最常持續時間
+        let bestLastedString = ConvertMillisecondToTimeString("h:mm:ss", bestLasted);
 
+    
         
         //紀錄參與時長
         var attendTimeAddr = 0;
@@ -253,7 +245,7 @@ studentRouter.post(
           studentID: classmate.studentID,
           aveConcern: aveConcern,
           concernPercentage: concernPercentage,
-          bestLasted: bestlastedString,
+          bestLasted: bestLastedString,
           attendTimePercentage: attendTimePercentage,
           timeLineArray: newTimeArray,
           concernDegreeArray: newConcernArray,
@@ -282,7 +274,20 @@ function ConvertUNIXTimeToTimeString(format, dateNumber){
   return timeString;
 }
 
+function ConvertMillisecondToTimeString(format, millisecond){
+  let newTimeString = format;
 
+  let hour = millisecond / (60 * 60 * 1000);
+  newTimeString = newTimeString.replace("h", hour < 1 ? "0" : hour);
+
+  let min = Math.floor(millisecond / (60 * 1000));
+  newTimeString = newTimeString.replace("mm", min < 10 ? "0" + min : min);
+  
+  let second = Math.floor(millisecond / 1000);
+  newTimeString = newTimeString.replace("ss", second < 10 ? "0" + second : second);
+
+  return newTimeString;
+}
 
 
 module.exports = studentRouter;
