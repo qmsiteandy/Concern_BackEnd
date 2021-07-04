@@ -99,9 +99,9 @@ studentRouter.put(
         let updateClassmate = classroom.classmates[indexInList];
         if(updateClassmate){
           if((Date.now() - updateClassmate.lastedUploadTime) > uploadDelay){
-            updateClassmate.newConcernDegree = concernDegree;
+            updateClassmate.newConcernDegree = parseFloat(concernDegree);
             updateClassmate.lastedUploadTime = Date.now();
-            updateClassmate.concernDegreeArray.push(concernDegree);
+            updateClassmate.concernDegreeArray.push(parseFloat(concernDegree));
             updateClassmate.timeLineArray.push(Date.now()); //以UNIX時間格式儲存
             
             classroom.classmates.splice(indexInList, 1, updateClassmate);
@@ -199,9 +199,7 @@ studentRouter.post(
         }
 
         //計算專注平均
-        let aveConcern = (
-          aveConcernAdder / classmate.concernDegreeArray.length
-        ).toFixed(2);
+        let aveConcern = parseFloat((aveConcernAdder / classmate.concernDegreeArray.length).toFixed(2));
 
         //計算專注百分比
         let concernPercentage = Math.floor((concernCounter / classmate.concernDegreeArray.length) * 100) + "%";
