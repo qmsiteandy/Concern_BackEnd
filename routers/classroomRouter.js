@@ -580,7 +580,6 @@ classroomRouter.post(
           } while (newTimeArray[newTimeArray.length - 1] + timeSpacing_millis < endTime);
 
           
-
           // let timeStringFormat = timeSpacing < 60 ? "hh:mm:ss" : "hh:mm";
           // for (let i = 0; i < newTimeArray.length; i++) {
           //   newTimeArray[i] = ConvertUNIXTimeToTimeString(timeStringFormat,newTimeArray[i]);
@@ -590,6 +589,7 @@ classroomRouter.post(
 
           result.push({
             studentName: classmate.studentName,
+            studentGoogleName: classmate.studentGoogleName,
             studentID: classmate.studentID,
             aveConcern: aveConcern,
             concernPercentage: concernPercentage,
