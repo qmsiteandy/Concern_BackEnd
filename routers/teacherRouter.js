@@ -165,6 +165,7 @@ teacherRouter.post(
       classroom.classmates.map(classmate => {
         dataList.push({
           "studentName": classmate.studentName,
+          "studentGoogleName": classmate.studentGoogleName,
           "studentID": classmate.studentID,
           "newConcernDegree": classmate.newConcernDegree,
         })
