@@ -106,26 +106,6 @@ classroomRouter.post(
 );
 
 classroomRouter.post(
-  "/x",
-  expressAsyncHandler(async (req, res) => {
-    const { classroomDataID, duration } = req.body;
-    const classroom = await Classroom.findById(classroomDataID);
-    if (classroom) {
-
-      classroom.classmates.forEach(classmate => {
-        classmate.lastedUploadTime = Date.now();
-      })
-
-      await classroom.save();
-      
-      res.send("完成")
-    } else {
-      res.status(404).send("尚無此教室");
-    }
-  })
-);
-
-classroomRouter.post(
   "/getRollcallStatus",
   expressAsyncHandler(async (req, res) => {
     const { classroomDataID } = req.body;

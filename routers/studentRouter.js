@@ -90,7 +90,7 @@ studentRouter.put(
     const { classroomDataID, indexInList, concernDegree } = req.body;
     const classroom = await Classroom.findById(classroomDataID);
 
-    const uploadDelay = 5000; //至少1秒後才能再次紀錄數據，以避免數據過多
+    const uploadDelay = 1000; //至少1秒後才能再次紀錄數據，以避免數據過多
 
     if(classroom){
       if(classroom.isClassing == false) res.status(400).send("課程尚未開始");
@@ -106,7 +106,6 @@ studentRouter.put(
             
             classroom.classmates.splice(indexInList, 1, updateClassmate);
             const updatedClassroom = await classroom.save();
-                  console.log(updatedClassroom.lastedUploadTime);
           }
             res.status(200).send("上傳成功");         
         }else{
