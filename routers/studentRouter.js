@@ -269,16 +269,13 @@ studentRouter.post(
 )
 
 function ConvertUNIXTimeToTimeString(format, dateNumber){
-
   newTime = new Date(dateNumber);
-
-  let timeZone = newTime.getTimezoneOffset() / 60 * -1;
 
   let timeString = format
     .replace("YYYY", newTime.getFullYear())
     .replace("MM", ((newTime.getMonth() < 10 ? '0' : '') + newTime.getMonth()))
     .replace("DD", ((newTime.getDate() < 10 ? '0' : '') + newTime.getDate()))
-    .replace("hh", ((newTime.getUTCHours()+timeZone)  < 10 ? "0" : "") + (newTime.getUTCHours()+timeZone))
+    .replace("hh", ((newTime.getHours())  < 10 ? "0" : "") + newTime.getHours())
     .replace("mm", ((newTime.getMinutes() < 10 ? '0' : '') + newTime.getMinutes()))
     .replace("ss", ((newTime.getSeconds() < 10 ? '0' : '') + newTime.getSeconds()))
  
