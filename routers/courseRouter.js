@@ -232,8 +232,8 @@ courseRouter.post(
       if (studentExisted == true) res.status(403).send("此學號已在名單中");
       else {
         course.classmates.push({
-          studentName: studentName || studentGoogleName,
-          studentGoogleName: studentGoogleName || studentName,
+          studentName: studentName,
+          studentGoogleName: studentGoogleName,
           studentID: studentID,
         });
         //將學生名單依照學號排序
@@ -242,6 +242,47 @@ courseRouter.post(
         const uploadedCourse = await course.save();
         res.status(201).send(uploadedCourse.classmates);
       }
+    } else {
+      res.status(404).send("尚無此堂課程");
+    }
+  })
+);
+
+courseRouter.post(
+  "/addMultipleStudents",
+  expressAsyncHandler(async (req, res) => {
+    const { courseDataID, studentsDataArray } = req.body;
+    const course = await Course.findById(courseDataID);
+    if (course) {
+
+      let updateClassmates = course.classmates;
+      let addFailList = new Array();
+
+      if(studentsDataArray){
+        studentsDataArray.forEach(student => {
+          let studentExisted = (updateClassmates.findIndex(element => {return element.studentID == student.studentID})) >= 0? true: false;
+         
+          //新增學生
+          if(!studentExisted){
+            updateClassmates.push(student);
+          }
+          //已存在的學號
+          else{
+            addFailList.push(student);
+          }
+        });
+      }
+      
+      updateClassmates = ClassmatesSorting(updateClassmates)
+      addFailList = ClassmatesSorting(addFailList);
+
+      course.classmates = updateClassmates;
+      const uploadedCourse = await course.save();
+
+      res.status(201).send({
+        updatedClassmates: uploadedCourse.classmates, 
+        addFailList: addFailList
+      });
     } else {
       res.status(404).send("尚無此堂課程");
     }
