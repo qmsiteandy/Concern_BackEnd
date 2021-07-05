@@ -295,8 +295,11 @@ classroomRouter.post(
            bestLastedRank: new Array()
         };
 
+        //避免要求人數大於同學人數
+        let newRankCount = rankCount < classmateData.length?  rankCount: classmateData.length;
+
         //aveConcernRank排序
-        for(let rank = 0; rank < rankCount; rank++){
+        for(let rank = 0; rank < newRankCount; rank++){
 
           let bestIndex = rank; 
           for(let i = rank+1; i < classmateData.length; i++){
@@ -314,7 +317,7 @@ classroomRouter.post(
           })
         }
         //concernPercentage排序
-        for(let rank = 0; rank < rankCount; rank++){
+        for(let rank = 0; rank < newRankCount; rank++){
 
           let bestIndex = rank; 
           for(let i = rank+1; i < classmateData.length; i++){
@@ -332,7 +335,7 @@ classroomRouter.post(
           })
         }
         //bestLasted排序
-        for(let rank = 0; rank < rankCount; rank++){
+        for(let rank = 0; rank < newRankCount; rank++){
 
           let bestIndex = rank; 
           for(let i = rank+1; i < classmateData.length; i++){
