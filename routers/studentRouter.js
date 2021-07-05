@@ -125,22 +125,23 @@ studentRouter.post(
     const classroom = await Classroom.findById(classroomDataID);
 
     if(classroom){
-
-      let indexInList = classroom.classmates.findIndex(element => { return element.classroomDataID == studentID});
-
-      if(rollcallIndex < classroom.rollcallTime.length){
-        //let rollcallIndex = classroom.rollcallTime.length -1;
-      
-        let updateClassmate = classroom.classmates[indexInList];
-
-        updateClassmate.attendance.push(rollcallIndex);
+      let indexInList = classroom.classmates.findIndex(element => { return element.studentID == studentID});
+      if(indexInList >= 0){
+        if(rollcallIndex < classroom.rollcallTime.length){
         
-        classroom.classmates.splice(indexInList, 1, updateClassmate);
-        const updatedClassroom = await classroom.save();
-
-        res.status(200).send("第" + (rollcallIndex+1) + "次點名簽到完成");
+          let updateClassmate = classroom.classmates[indexInList];
+  
+          updateClassmate.attendance.push(rollcallIndex);
+          
+          classroom.classmates.splice(indexInList, 1, updateClassmate);
+          const updatedClassroom = await classroom.save();
+  
+          res.status(200).send("第" + (rollcallIndex+1) + "次點名簽到完成");
+        }else{
+          res.status(403).send("第" + (rollcallIndex+1) + "次點名尚未開始");
+        }
       }else{
-        res.status(403).send("第" + (rollcallIndex+1) + "次點名尚未開始");
+        res.status(402).send("教室無此學生資料");
       }
     }else{
       res.status(404).send("無此課堂教室");
@@ -155,10 +156,11 @@ studentRouter.post(
     const classroom = await Classroom.findById(classroomDataID);
     if(classroom){
 
-      let indexInList = classroom.classmates.findIndex(element => { return element.classroomDataID == studentID});
+      let indexInList = classroom.classmates.findIndex(element => { return element.studentID == studentID});
 
-      let classmate = classroom.classmates[indexInList];
-      if(classmate){
+      if(indexInList >= 0){
+
+        let classmate = classroom.classmates[indexInList];
 
         //用來記錄專注平均
         let aveConcernAdder = 0;
