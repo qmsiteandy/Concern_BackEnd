@@ -278,7 +278,7 @@ function ConvertUNIXTimeToTimeString(format, dateNumber){
     .replace("YYYY", newTime.getFullYear())
     .replace("MM", ((newTime.getMonth() < 10 ? '0' : '') + newTime.getMonth()))
     .replace("DD", ((newTime.getDate() < 10 ? '0' : '') + newTime.getDate()))
-    .replace("hh", ((newTime.getHours()+timeZone)  < 10 ? "0" : "") + (newTime.getHours()+timeZone))
+    .replace("hh", ((newTime.getUTCHours()+timeZone)  < 10 ? "0" : "") + (newTime.getUTCHours()+timeZone))
     .replace("mm", ((newTime.getMinutes() < 10 ? '0' : '') + newTime.getMinutes()))
     .replace("ss", ((newTime.getSeconds() < 10 ? '0' : '') + newTime.getSeconds()))
  
