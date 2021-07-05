@@ -121,10 +121,13 @@ studentRouter.put(
 studentRouter.post(
   "/rollcall",
   expressAsyncHandler(async (req, res) => {
-    const { classroomDataID, indexInList, rollcallIndex } = req.body;
+    const { classroomDataID, studentID, rollcallIndex } = req.body;
     const classroom = await Classroom.findById(classroomDataID);
 
     if(classroom){
+
+      let indexInList = classroom.classmates.findIndex(element => { return element.classroomDataID == studentID});
+
       if(rollcallIndex < classroom.rollcallTime.length){
         //let rollcallIndex = classroom.rollcallTime.length -1;
       
@@ -148,9 +151,12 @@ studentRouter.post(
 studentRouter.post(
   "/getPersonConcernDiagram",
   expressAsyncHandler(async (req, res) => {
-    const { classroomDataID, indexInList, timeSpacing } = req.body;
+    const { classroomDataID, studentID, timeSpacing } = req.body;
     const classroom = await Classroom.findById(classroomDataID);
     if(classroom){
+
+      let indexInList = classroom.classmates.findIndex(element => { return element.classroomDataID == studentID});
+
       let classmate = classroom.classmates[indexInList];
       if(classmate){
 
