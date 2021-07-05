@@ -622,7 +622,10 @@ function SortClassmateDataByID(classmateDataArray){
 function ConvertUNIXTimeToTimeString(format, dateNumber) {
   newTime = new Date(dateNumber);
 
+  
   let timeZone = newTime.getTimezoneOffset() / 60 * -1;
+  
+  console.log("dateNumber:"+ dateNumber, "timeZone:"+timeZone, "getUTCHours:"+newTime.getUTCHours);
 
   let timeString = format
     .replace("YYYY", newTime.getFullYear())
