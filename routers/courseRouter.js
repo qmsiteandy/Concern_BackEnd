@@ -72,7 +72,7 @@ courseRouter.post(
         if(classroom.isLinkToCourse == false){
 
           newTime = new Date();
-          course.courseWeeks.push({
+          course.courseWeeks.splice(0, 0, {
             weekName: newTime.getFullYear() + "/" + (newTime.getMonth()+1) + "/" + newTime.getDate(),
             classroomDataID: classroomDataID,
             personalLeaveIDList: new Array()
