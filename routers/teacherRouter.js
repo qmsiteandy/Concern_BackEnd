@@ -28,11 +28,21 @@ teacherRouter.post(
     const { teacherName, classroomMeetID } = req.body;
 
     newTime = new Date();
+    let date = newTime.getFullYear() + "/" + (newTime.getMonth()+1) + "/" + newTime.getDate()
+    switch(newTime.getDay()){ 
+      case 0: date += " (日)"; break;
+      case 1: date += " (一)"; break;
+      case 2: date += " (二)"; break;
+      case 3: date += " (三)"; break;
+      case 4: date += " (四)"; break;
+      case 5: date += " (五)"; break;
+      case 6: date += " (六)"; break;
+    }
     
     const newClassroom = new Classroom({
       teacherName: teacherName,
       classroomMeetID: classroomMeetID,
-      date: newTime.getFullYear() + "/" + (newTime.getMonth()+1) + "/" + newTime.getDate(),
+      date: date,
       startTime: null,
       endTime: null
     });

@@ -72,8 +72,19 @@ courseRouter.post(
         if(classroom.isLinkToCourse == false){
 
           newTime = new Date();
+          let weekName = newTime.getFullYear() + "/" + (newTime.getMonth()+1) + "/" + newTime.getDate()
+          switch(newTime.getDay()){ 
+            case 0: weekName += " (日)"; break;
+            case 1: weekName += " (一)"; break;
+            case 2: weekName += " (二)"; break;
+            case 3: weekName += " (三)"; break;
+            case 4: weekName += " (四)"; break;
+            case 5: weekName += " (五)"; break;
+            case 6: weekName += " (六)"; break;
+          }
+
           course.courseWeeks.splice(0, 0, {
-            weekName: newTime.getFullYear() + "/" + (newTime.getMonth()+1) + "/" + newTime.getDate(),
+            weekName: weekName,
             classroomDataID: classroomDataID,
             personalLeaveIDList: new Array()
           });
