@@ -268,10 +268,10 @@ classroomRouter.post(
           }
 
           //計算專注平均
-          let aveConcern = parseFloat((aveConcernAdder / classmate.concernDegreeArray.length).toFixed(2));
+          let aveConcern = parseFloat((aveConcernAdder / classmate.concernDegreeArray.length).toFixed(2)) || 0;
 
           //計算專注百分比
-          let concernPercentage = concernCounter / classmate.concernDegreeArray.length;
+          let concernPercentage = (concernCounter / classmate.concernDegreeArray.length) || 0;
           let concernPercentageString = Math.floor((concernPercentage) * 100) + "%";
 
           //最常持續時間
@@ -521,13 +521,10 @@ classroomRouter.post(
           }
 
           //計算專注平均
-          let aveConcern = parseFloat((aveConcernAdder / classmate.concernDegreeArray.length).toFixed(2));
+          let aveConcern = parseFloat((aveConcernAdder / classmate.concernDegreeArray.length).toFixed(2)) || 0;
 
           //計算專注百分比
-          let concernPercentage =
-            Math.floor(
-              (concernCounter / classmate.concernDegreeArray.length) * 100
-            ) + "%";
+          let concernPercentage = (Math.floor((concernCounter / classmate.concernDegreeArray.length) * 100) || 0) + "%";
 
           //最常持續時間
           let bestLastedString = ConvertMillisecondToTimeString("h:mm:ss", bestLasted);
