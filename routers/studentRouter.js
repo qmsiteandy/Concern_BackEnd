@@ -293,19 +293,18 @@ function ConvertUNIXTimeToTimeString(format, dateNumber){
 function ConvertMillisecondToTimeString(format, millisecond){
   let newTimeString = format;
 
-  let hour = millisecond / (60 * 60 * 1000);
+  let hour = Math.floor(millisecond / (60 * 60 * 1000));
   millisecond -= hour * (60 * 60 * 1000);
   newTimeString = newTimeString.replace("h", hour < 1 ? "0" : hour);
 
   let min = Math.floor(millisecond / (60 * 1000));
   millisecond -= min * (60 * 1000);
   newTimeString = newTimeString.replace("mm", min < 10 ? "0" + min : min);
-  
+
   let second = Math.floor(millisecond / 1000);
   millisecond -= second * 1000;
   newTimeString = newTimeString.replace("ss", second < 10 ? "0" + second : second);
 
   return newTimeString;
 }
-
 module.exports = studentRouter;
