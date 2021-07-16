@@ -306,34 +306,32 @@ courseRouter.put(
     const { courseDataID, studentIndex, studentName, studentGoogleName, studentID } = req.body;
     const course = await Course.findById(courseDataID);
     if (course) {
+
       //確認更改後學號是否重複
-      if (studentID) {
-        //確認更改後學號是否重複
-        let studentIDExisted = false;
-        for (let i = 0; i < course.classmates.length; i++) {
-          if ( i != studentIndex && course.classmates[i].studentID == studentID) {
-            studentIDExisted = true;
-          }
-        }
-        if (studentIDExisted == true) {
-          res.status(403).send("此學號已存在");
+      let studentIDExisted = false;
+      for (let i = 0; i < course.classmates.length; i++) {
+        if ( i != studentIndex && course.classmates[i].studentID == studentID) {
+          studentIDExisted = true;
         }
       }
 
-      //取代資料。注意，無法直接設定course.classmates[studentIndex]內的物件，必須取代一整個Object
-      const newDate = {
-        studentName: studentName || course.classmates[studentIndex].studentName,
-        studentGoogleName: studentGoogleName || course.classmates[studentIndex].studentGoogleName,
-        studentID: studentID || course.classmates[studentIndex].studentID,
+      if (studentIDExisted == true) {
+        res.status(403).send("此學號已存在");
+      }else{
+        //取代資料。注意，無法直接設定course.classmates[studentIndex]內的物件，必須取代一整個Object
+        const newDate = {
+          studentName: studentName,
+          studentGoogleName: studentGoogleName,
+          studentID: studentID,
+        }
+        course.classmates.splice(studentIndex, 1, newDate);
+
+        //將學生名單依照學號排序
+        course.classmates = ClassmatesSorting(course.classmates);
+
+        const uploadedCourse = await course.save();
+        res.status(201).send(uploadedCourse.classmates);
       }
-      course.classmates.splice(studentIndex, 1, newDate);
-
-      //將學生名單依照學號排序
-      course.classmates = ClassmatesSorting(course.classmates);
-
-      const uploadedCourse = await course.save();
-      res.status(201).send(uploadedCourse.classmates);
-      
     } else {
       res.status(404).send("尚無此堂課程");
     }
