@@ -58,6 +58,84 @@ courseRouter.post(
   })
 );
 
+courseRouter.post(
+  "/getTotalRollcallStatus",
+  expressAsyncHandler(async (req, res) => {
+    const { courseDataID } = req.body;
+    const course = await Course.findById(courseDataID);
+    if (course) {
+
+      let sign_attend = 1,  //出席
+        sign_miss = 0, //錯過點名
+        sign_personalLeave = -1,  //請假
+        sign_absence = -2;  //曠課缺席
+
+      let result = {
+        weekName: new Array(),
+        classmatesList: new Array()
+      }
+
+      //將學生名單建立在result中
+      course.classmates.forEach(element => {
+        result.classmatesList.push({
+          studentName: element.studentName,
+          studentID: element.studentID,
+          rollcallStatus: new Array()
+        })
+      });
+
+      //指向每一週
+      for(let i = 0; i < course.courseWeeks.length; i++){
+        courseWeek = course.courseWeeks[i];
+      
+        result.weekName.push(courseWeek.weekName);
+        //紀錄正在整理的是第幾周資料
+        let weekIndex = course.courseWeeks.length -1;
+        
+        let classroom = await Classroom.findById(courseWeek.classroomDataID);
+        
+        //foreach已存入result的學生名單
+        for(let resultClassmateIndex = 0; resultClassmateIndex < result.classmatesList.length; resultClassmateIndex++){
+
+          resultClassmate = result.classmatesList[resultClassmateIndex];
+          resultClassmate.rollcallStatus.push(null);
+
+          let indexInClassroom = classroom.classmates.findIndex(c => {return c.studentID == resultClassmate.studentID});
+          
+          //資料有在教室中
+          if(indexInClassroom >= 0){
+            let attendCount = classroom.classmates[indexInClassroom].attendance.length;
+            let rollcallCount = classroom.rollcallTime.length;
+
+            
+            //每一次都有完成點名
+            if(rollcallCount == attendCount) resultClassmate.rollcallStatus[weekIndex] = sign_attend;
+            //完全沒點到名
+            if(attendCount == 0) resultClassmate.rollcallStatus[weekIndex] = sign_absence;
+            //漏掉部分點名
+            else resultClassmate.rollcallStatus[weekIndex] = sign_miss;
+          }
+          //此學生有請假
+          else if((courseWeek.personalLeaveIDList.findIndex(item => {return item == resultClassmate.studentID})) >= 0){
+            resultClassmate.rollcallStatus[weekIndex] = sign_personalLeave;
+          }
+          //曠課沒出現在教室
+          else{
+            resultClassmate.rollcallStatus[weekIndex] = sign_absence;
+          }
+          
+          //把更新後的學生更新至 result.classmatesList
+          result.classmatesList.splice(resultClassmateIndex, 1, resultClassmate);
+        }
+      }
+
+      res.status(200).send(result);
+    } else {
+      res.status(404).send("尚無此課程");
+    }
+  })
+);
+
 //#region ==========課程週設定部分==========
 
 courseRouter.post(
