@@ -275,7 +275,7 @@ classroomRouter.post(
           let concernPercentageString = Math.floor((concernPercentage) * 100) + "%";
 
           //最常持續時間
-          let bestLastedString = ConvertMillisecondToTimeString("h:mm:ss", bestLasted);
+          let bestLastedString = ConvertMillisecondToTimeString("h時mm分ss秒", bestLasted);
           
 
           classmateData.push({
@@ -527,7 +527,7 @@ classroomRouter.post(
           let concernPercentage = (Math.floor((concernCounter / classmate.concernDegreeArray.length) * 100) || 0) + "%";
 
           //最常持續時間
-          let bestLastedString = ConvertMillisecondToTimeString("h:mm:ss", bestLasted);
+          let bestLastedString = ConvertMillisecondToTimeString("h時mm分ss秒", bestLasted);
 
           
           //紀錄參與時長
