@@ -91,6 +91,7 @@ courseRouter.post(
         result.weekName.push(courseWeek.weekName);
         
         let classroom = await Classroom.findById(courseWeek.classroomDataID);
+        let rollcallCount = classroom.rollcallTime.length;
         
         //foreach已存入result的學生名單
         for(let resultClassmateIndex = 0; resultClassmateIndex < result.classmatesList.length; resultClassmateIndex++){
@@ -98,30 +99,32 @@ courseRouter.post(
           resultClassmate = result.classmatesList[resultClassmateIndex];
           resultClassmate.rollcallStatus.push(null);
 
-          let indexInClassroom = classroom.classmates.findIndex(c => {return c.studentID == resultClassmate.studentID});
-          
-          //資料有在教室中
-          if(indexInClassroom >= 0){
-            let attendCount = classroom.classmates[indexInClassroom].attendance.length;
-            let rollcallCount = classroom.rollcallTime.length;
+          //如果本次有點名
+          if(rollcallCount > 0){
 
-            
-            //每一次都有完成點名
-            if(rollcallCount == attendCount) resultClassmate.rollcallStatus[weekIndex] = sign_attend;
-            //完全沒點到名
-            if(attendCount == 0) resultClassmate.rollcallStatus[weekIndex] = sign_absence;
-            //漏掉部分點名
-            else resultClassmate.rollcallStatus[weekIndex] = sign_miss;
-          }
-          //此學生有請假
-          else if((courseWeek.personalLeaveIDList.findIndex(item => {return item == resultClassmate.studentID})) >= 0){
-            resultClassmate.rollcallStatus[weekIndex] = sign_personalLeave;
-          }
-          //曠課沒出現在教室
-          else{
-            resultClassmate.rollcallStatus[weekIndex] = sign_absence;
-          }
+            let indexInClassroom = classroom.classmates.findIndex(c => {return c.studentID == resultClassmate.studentID});
           
+            //資料有在教室中
+            if(indexInClassroom >= 0){
+              let attendCount = classroom.classmates[indexInClassroom].attendance.length;
+
+              //每一次都有完成點名
+              if(rollcallCount == attendCount) resultClassmate.rollcallStatus[weekIndex] = sign_attend;
+              //完全沒點到名
+              if(attendCount == 0) resultClassmate.rollcallStatus[weekIndex] = sign_absence;
+              //漏掉部分點名
+              else resultClassmate.rollcallStatus[weekIndex] = sign_miss;
+            }
+            //此學生有請假
+            else if((courseWeek.personalLeaveIDList.findIndex(item => {return item == resultClassmate.studentID})) >= 0){
+              resultClassmate.rollcallStatus[weekIndex] = sign_personalLeave;
+            }
+            //曠課沒出現在教室
+            else{
+              resultClassmate.rollcallStatus[weekIndex] = sign_absence;
+            }
+          }
+           
           //把更新後的學生更新至 result.classmatesList
           result.classmatesList.splice(resultClassmateIndex, 1, resultClassmate);
         }
