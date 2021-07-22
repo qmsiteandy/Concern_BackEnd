@@ -85,12 +85,10 @@ courseRouter.post(
       });
 
       //指向每一週
-      for(let i = 0; i < course.courseWeeks.length; i++){
-        courseWeek = course.courseWeeks[i];
+      for(let weekIndex = 0; weekIndex < course.courseWeeks.length; weekIndex++){
+        courseWeek = course.courseWeeks[weekIndex];
       
         result.weekName.push(courseWeek.weekName);
-        //紀錄正在整理的是第幾周資料
-        let weekIndex = course.courseWeeks.length -1;
         
         let classroom = await Classroom.findById(courseWeek.classroomDataID);
         
