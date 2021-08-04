@@ -1,6 +1,7 @@
 const express = require('express');
 const expressAsyncHandler = require("express-async-handler");
 const Teacher = require('../models/teacherModel');
+const Course = require("../models/courseModel");
 const Classroom = require('../models/classroomModel');
 const teacherRouter = express.Router();
 const { response } = require('express');
@@ -208,25 +209,47 @@ teacherRouter.post(
        'teacherID': teacherID
       }] });
 
+    let result = {
+      teacherDataID: null,
+      teacherName: null,
+      teacherID: null,
+      courses: new Array(),
+      lastCourseDataID: null,
+      lastClassroomDataID: null
+    }
+
     if (teacher) {
-      res.status(201).send({
-        "teacherDataID": teacher._id,
-        "teacherName": teacher.teacherName,
-        "teacherID": teacher.teacherID,
-        "courses": teacher.courses
-      });
+      result.teacherDataID = teacher._id;
+      result.teacherName = teacher.teacherName;
+      result.teacherID = teacher.teacherID;
+      result.courses = teacher.courses;
+
+      if(teacher.courses.length > 0){
+        
+        result.lastCourseDataID = teacher.courses[teacher.courses.length-1].courseDataID;
+
+        const lastCourse = await Course.findById( result.lastCourseDataID);
+
+        if(lastCourse.courseWeeks.length > 0){
+          result.lastClassroomDataID = lastCourse.courseWeeks[0].classroomDataID;
+        }
+      }
+
+      res.status(201).send(result);
+
     } else {
       const newTeacher = new Teacher({
         teacherName: teacherName,
         teacherID: teacherID,
       });
+
       const uploadedTeacher = await newTeacher.save();
-      res.status(201).send({
-        "teacherDataID": uploadedTeacher._id,
-        "teacherName": uploadedTeacher.teacherName,
-        "teacherID": uploadedTeacher.teacherID,
-        "courses": uploadedTeacher.courses
-      })
+
+      result.teacherDataID = uploadedTeacher._id;
+      result.teacherName = uploadedTeacher.teacherName;
+      result.teacherID = uploadedTeacher.teacherID;
+
+      res.status(201).send(result);
     }
   })
 );
