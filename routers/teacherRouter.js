@@ -200,56 +200,60 @@ teacherRouter.post(
   expressAsyncHandler(async (req, res) => {
     const { teacherName, teacherID } = req.body;
 
-    if(!teacherName || !teacherID) res.status(400).send("缺少老師姓名或ID");
-
-    const teacher = await Teacher.findOne({ 
-      $and: [{
-        'teacherName': teacherName
-      }, {
-       'teacherID': teacherID
-      }] });
-
-    let result = {
-      teacherDataID: null,
-      teacherName: null,
-      teacherID: null,
-      courses: new Array(),
-      lastCourseDataID: null,
-      lastClassroomDataID: null
-    }
-
-    if (teacher) {
-      result.teacherDataID = teacher._id;
-      result.teacherName = teacher.teacherName;
-      result.teacherID = teacher.teacherID;
-      result.courses = teacher.courses;
-
-      if(teacher.courses.length > 0){
-        
-        result.lastCourseDataID = teacher.courses[teacher.courses.length-1].courseDataID;
-
-        const lastCourse = await Course.findById( result.lastCourseDataID);
-
-        if(lastCourse.courseWeeks.length > 0){
-          result.lastClassroomDataID = lastCourse.courseWeeks[0].classroomDataID;
-        }
-      }
-
-      res.status(201).send(result);
-
-    } else {
-      const newTeacher = new Teacher({
-        teacherName: teacherName,
-        teacherID: teacherID,
+    if(teacherName == "" || teacherID =="") res.status(400).send("缺少老師姓名或ID");
+    else{
+      const teacher = await Teacher.findOne({ 
+        $and: [
+          {'teacherName': teacherName}, 
+          {'teacherID': teacherID}
+        ] 
       });
 
-      const uploadedTeacher = await newTeacher.save();
+      console.log(teacher);
 
-      result.teacherDataID = uploadedTeacher._id;
-      result.teacherName = uploadedTeacher.teacherName;
-      result.teacherID = uploadedTeacher.teacherID;
-
-      res.status(201).send(result);
+  
+      let result = {
+        teacherDataID: null,
+        teacherName: null,
+        teacherID: null,
+        courses: new Array(),
+        lastCourseDataID: null,
+        lastClassroomDataID: null
+      }
+  
+      if (teacher) {
+        result.teacherDataID = teacher._id;
+        result.teacherName = teacher.teacherName;
+        result.teacherID = teacher.teacherID;
+        result.courses = teacher.courses;
+  
+        if(teacher.courses.length > 0){
+          
+          result.lastCourseDataID = teacher.courses[teacher.courses.length-1].courseDataID;
+  
+          const lastCourse = await Course.findById( result.lastCourseDataID);
+  
+          if(lastCourse.courseWeeks.length > 0){
+            result.lastClassroomDataID = lastCourse.courseWeeks[0].classroomDataID;
+          }
+        }
+  
+        res.status(201).send(result);
+  
+      } else {
+        const newTeacher = new Teacher({
+          teacherName: teacherName,
+          teacherID: teacherID,
+        });
+  
+        const uploadedTeacher = await newTeacher.save();
+  
+        result.teacherDataID = uploadedTeacher._id;
+        result.teacherName = uploadedTeacher.teacherName;
+        result.teacherID = uploadedTeacher.teacherID;
+  
+        res.status(201).send(result);
+      }
     }
   })
 );
