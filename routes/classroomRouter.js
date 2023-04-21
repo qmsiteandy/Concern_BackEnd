@@ -1,14 +1,15 @@
 const express = require("express");
+const router = express.Router();
 const Course = require("../models/courseModel");
 const Classroom = require("../models/classroomModel");
-const router = express.Router();
 
 // 設定專注程度閾值，0.8專心、0.5普通
 const concernLimit0 = 0.5,
   concernLimit1 = 0.8;
 
-router.post("/getClassroomTimeStatus", async (req, res, next) => {
-  const { classroomDataID } = req.body;
+// 取得課程的時間記錄
+router.get("/getTimeStatus/:classroomDataID", async (req, res, next) => {
+  const { classroomDataID } = req.params;
   const classroom = await Classroom.findById(classroomDataID);
   if (classroom) {
     let newRestTimeArray = classroom.restTime;
@@ -21,7 +22,7 @@ router.post("/getClassroomTimeStatus", async (req, res, next) => {
         : "";
     });
 
-    res.status(200).send({
+    return res.status(200).send({
       isClassing: classroom.isClassing,
       isResting: classroom.isResting,
       startTime: ConvertUNIXTimeToTimeString("hh:mm", classroom.startTime),
@@ -31,12 +32,14 @@ router.post("/getClassroomTimeStatus", async (req, res, next) => {
         : "",
     });
   } else {
-    res.status(404).send("尚無此教室");
+    return res.status(404).send("尚無此教室");
   }
 });
 
-router.put("/setPersonalLeave", async (req, res, next) => {
-  const { classroomDataID, studentID, truefalse } = req.body;
+// 設定學生請假
+router.put("/setPersonalLeave/:classroomDataID", async (req, res, next) => {
+  const { classroomDataID } = req.params;
+  const { studentID, truefalse } = req.body;
   const classroom = await Classroom.findById(classroomDataID);
   if (classroom) {
     const course = await Course.findById(classroom.courseDataID);
@@ -60,7 +63,7 @@ router.put("/setPersonalLeave", async (req, res, next) => {
         const updatedCourse = await course.save();
       }
 
-      res.status(200).send(studentID + " 請假登記完成");
+      return res.status(200).send(studentID + " 請假登記完成");
     }
     //取消請假
     else {
@@ -70,15 +73,18 @@ router.put("/setPersonalLeave", async (req, res, next) => {
         course.courseWeeks.splice(courseWeekIndex, 1, updateCourseWeek);
         const updatedCourse = await course.save();
       }
-      res.status(201).send(studentID + " 已取消請假");
+      return res.status(201).send(studentID + " 已取消請假");
     }
   } else {
-    res.status(404).send("尚無此教室");
+    return res.status(404).send("尚無此教室");
   }
 });
 
-router.post("/startRollcall", async (req, res, next) => {
-  const { classroomDataID, duration } = req.body;
+// 開始點名
+router.post("/startRollcall/:classroomDataID", async (req, res, next) => {
+  const { classroomDataID } = req.params;
+  const duration = req.query.duration | 10;
+
   const classroom = await Classroom.findById(classroomDataID);
   if (classroom) {
     if (!classroom.rollcallTime) classroom.rollcallTime = new Array();
@@ -98,12 +104,13 @@ router.post("/startRollcall", async (req, res, next) => {
       .status(200)
       .send("第" + (rollcallIndex + 1) + "次點名 ：" + duration + "s");
   } else {
-    res.status(404).send("尚無此教室");
+    return res.status(404).send("尚無此教室");
   }
 });
 
-router.post("/getRollcallStatus", async (req, res, next) => {
-  const { classroomDataID } = req.body;
+// 取得點名結果
+router.get("/getRollcallStatus/:classroomDataID", async (req, res, next) => {
+  const { classroomDataID } = req.params;
   const classroom = await Classroom.findById(classroomDataID);
   if (classroom) {
     let rollcallCount = classroom.rollcallTime.length;
@@ -155,7 +162,7 @@ router.post("/getRollcallStatus", async (req, res, next) => {
         //應到人數
         result.shouldAttendCount = course.classmates.length;
       } else {
-        res.status(403).send("無符合courseDataID的課程資料");
+        return res.status(403).send("無符合courseDataID的課程資料");
       }
     }
 
@@ -219,14 +226,17 @@ router.post("/getRollcallStatus", async (req, res, next) => {
     result.absenceCount =
       result.shouldAttendCount - result.attentCount - result.personalLeaveCount;
 
-    res.status(200).send(result);
+    return res.status(200).send(result);
   } else {
-    res.status(404).send("尚無此教室");
+    return res.status(404).send("尚無此教室");
   }
 });
 
-router.post("/getRankData", async (req, res, next) => {
-  const { classroomDataID, rankCount } = req.body;
+// 取得班級排名資料
+router.post("/getRank/:classroomDataID", async (req, res, next) => {
+  const { classroomDataID } = req.params;
+  const rankCount = req.query.rankCount | 3;
+
   const classroom = await Classroom.findById(classroomDataID);
   if (classroom) {
     if (classroom.classmates.length > 0) {
@@ -373,17 +383,20 @@ router.post("/getRankData", async (req, res, next) => {
           bestLasted: storage.bestLastedString,
         });
       }
-      res.status(200).send(result);
+      return res.status(200).send(result);
     } else {
-      res.status(403).send("此教室尚無學生資料");
+      return res.status(403).send("此教室尚無學生資料");
     }
   } else {
-    res.status(404).send("尚無此教室");
+    return res.status(404).send("尚無此教室");
   }
 });
 
-router.post("/getStatisticsDiagram", async (req, res, next) => {
-  const { classroomDataID, timeSpacing } = req.body;
+// 取得全班統計圖資訊
+router.get("/getStatisticsDiagram/:classroomDataID", async (req, res, next) => {
+  const { classroomDataID } = req.params;
+  const timeSpacing = req.query.timeSpacing | 10;
+
   const classroom = await Classroom.findById(classroomDataID);
 
   if (classroom) {
@@ -499,167 +512,178 @@ router.post("/getStatisticsDiagram", async (req, res, next) => {
         );
       }
 
-      res.status(200).send(result);
+      return res.status(200).send(result);
     } else {
-      res.status(403).send("此教室尚無學生資料");
+      return res.status(403).send("此教室尚無學生資料");
     }
   } else {
-    res.status(404).send("尚無此教室");
+    return res.status(404).send("尚無此教室");
   }
 });
 
-router.post("/getPersonDiagramList", async (req, res, next) => {
-  const { classroomDataID, timeSpacing } = req.body;
-  const classroom = await Classroom.findById(classroomDataID);
-  if (classroom) {
-    if (classroom.classmates.length > 0) {
-      let result = new Array();
+// 取得全班學生的個人時序圖陣列(含分析數據)
+router.post(
+  "/getPersonDiagramList/:classroomDataID",
+  async (req, res, next) => {
+    const { classroomDataID } = req.params;
+    const timeSpacing = req.query.timeSpacing | 10;
 
-      classroom.classmates.forEach((classmate) => {
-        //用來記錄專注平均
-        let aveConcernAdder = 0;
-        //用來記錄專注百分比
-        let concernCounter = 0;
-        //用來記錄最常持續時間
-        let isLasting = false;
-        let lastedTime = 0;
-        let bestLasted = 0;
+    const classroom = await Classroom.findById(classroomDataID);
+    if (classroom) {
+      if (classroom.classmates.length > 0) {
+        let result = new Array();
 
-        for (let i = 0; i < classmate.timeLineArray.length; i++) {
+        classroom.classmates.forEach((classmate) => {
           //用來記錄專注平均
-          aveConcernAdder += classmate.concernDegreeArray[i];
+          let aveConcernAdder = 0;
+          //用來記錄專注百分比
+          let concernCounter = 0;
+          //用來記錄最常持續時間
+          let isLasting = false;
+          let lastedTime = 0;
+          let bestLasted = 0;
 
-          //用來記錄專注百分比，之後會除以concernDegreeArray.length
-          if (classmate.concernDegreeArray[i] >= concernLimit1)
-            concernCounter += 1;
+          for (let i = 0; i < classmate.timeLineArray.length; i++) {
+            //用來記錄專注平均
+            aveConcernAdder += classmate.concernDegreeArray[i];
 
-          //用來記錄持續時間
-          if (i < classmate.timeLineArray.length - 1) {
-            if (classmate.concernDegreeArray[i] >= concernLimit1) {
-              //若兩筆數據間格超過10秒也視為中斷
-              timeSpace =
-                classmate.timeLineArray[i + 1] - classmate.timeLineArray[i];
-              if (timeSpace < 10000) {
-                isLasting = true;
-                lastedTime += timeSpace;
-              } else {
+            //用來記錄專注百分比，之後會除以concernDegreeArray.length
+            if (classmate.concernDegreeArray[i] >= concernLimit1)
+              concernCounter += 1;
+
+            //用來記錄持續時間
+            if (i < classmate.timeLineArray.length - 1) {
+              if (classmate.concernDegreeArray[i] >= concernLimit1) {
+                //若兩筆數據間格超過10秒也視為中斷
+                timeSpace =
+                  classmate.timeLineArray[i + 1] - classmate.timeLineArray[i];
+                if (timeSpace < 10000) {
+                  isLasting = true;
+                  lastedTime += timeSpace;
+                } else {
+                  isLasting = false;
+                  if (lastedTime > bestLasted) bestLasted = lastedTime;
+                  lastedTime = 0;
+                }
+              }
+              if (
+                isLasting &&
+                classmate.concernDegreeArray[i] < concernLimit1
+              ) {
                 isLasting = false;
                 if (lastedTime > bestLasted) bestLasted = lastedTime;
                 lastedTime = 0;
               }
-            }
-            if (isLasting && classmate.concernDegreeArray[i] < concernLimit1) {
+            } else {
               isLasting = false;
               if (lastedTime > bestLasted) bestLasted = lastedTime;
               lastedTime = 0;
             }
-          } else {
-            isLasting = false;
-            if (lastedTime > bestLasted) bestLasted = lastedTime;
-            lastedTime = 0;
-          }
-        }
-
-        //計算專注平均
-        let aveConcern =
-          parseFloat(
-            (aveConcernAdder / classmate.concernDegreeArray.length).toFixed(2)
-          ) || 0;
-
-        //計算專注百分比
-        let concernPercentage =
-          (Math.floor(
-            (concernCounter / classmate.concernDegreeArray.length) * 100
-          ) || 0) + "%";
-
-        //最常持續時間
-        let bestLastedString = ConvertMillisecondToTimeString(
-          "h時mm分ss秒",
-          bestLasted
-        );
-
-        //紀錄參與時長
-        var attendTimeAddr = 0;
-
-        //整理專注時序表
-        let newConcernArray = new Array();
-        let newTimeArray = new Array();
-        let diagramConcernAdder = 0;
-        let aveCounter = 0;
-        let dataIndex = 0;
-        let timeSpacing_millis = timeSpacing * 1000;
-
-        let endTime =
-          classroom.endTime ||
-          classmate.timeLineArray[classmate.timeLineArray.length - 1];
-
-        do {
-          if (newTimeArray.length == 0) newTimeArray.push(classroom.startTime);
-          else
-            newTimeArray.push(
-              newTimeArray[newTimeArray.length - 1] + timeSpacing_millis
-            );
-
-          while (
-            classmate.timeLineArray[dataIndex] <
-            newTimeArray[newTimeArray.length - 1] + timeSpacing_millis
-          ) {
-            diagramConcernAdder += classmate.concernDegreeArray[dataIndex];
-            aveCounter += 1;
-
-            //紀錄參與課程時間長
-            if (dataIndex < classmate.timeLineArray.length - 1)
-              attendTimeAddr +=
-                classmate.timeLineArray[dataIndex + 1] -
-                classmate.timeLineArray[dataIndex];
-
-            dataIndex += 1;
           }
 
-          newConcernArray.push(diagramConcernAdder / aveCounter);
-          diagramConcernAdder = 0;
-          aveCounter = 0;
-        } while (
-          newTimeArray[newTimeArray.length - 1] + timeSpacing_millis <
-          endTime
-        );
+          //計算專注平均
+          let aveConcern =
+            parseFloat(
+              (aveConcernAdder / classmate.concernDegreeArray.length).toFixed(2)
+            ) || 0;
 
-        let timeStringFormat = timeSpacing < 60 ? "hh:mm:ss" : "hh:mm";
-        for (let i = 0; i < newTimeArray.length; i++) {
-          newTimeArray[i] = ConvertUNIXTimeToTimeString(
-            timeStringFormat,
-            newTimeArray[i]
+          //計算專注百分比
+          let concernPercentage =
+            (Math.floor(
+              (concernCounter / classmate.concernDegreeArray.length) * 100
+            ) || 0) + "%";
+
+          //最常持續時間
+          let bestLastedString = ConvertMillisecondToTimeString(
+            "h時mm分ss秒",
+            bestLasted
           );
-        }
 
-        let attendTimePercentage =
-          Math.floor((attendTimeAddr / (endTime - classroom.startTime)) * 100) +
-          "%";
+          //紀錄參與時長
+          var attendTimeAddr = 0;
 
-        result.push({
-          studentName: classmate.studentName,
-          studentGoogleName: classmate.studentGoogleName,
-          studentID: classmate.studentID,
-          aveConcern: aveConcern,
-          concernPercentage: concernPercentage,
-          bestLasted: bestLastedString,
-          attendTimePercentage: attendTimePercentage,
-          timeLineArray: newTimeArray,
-          concernDegreeArray: newConcernArray,
+          //整理專注時序表
+          let newConcernArray = new Array();
+          let newTimeArray = new Array();
+          let diagramConcernAdder = 0;
+          let aveCounter = 0;
+          let dataIndex = 0;
+          let timeSpacing_millis = timeSpacing * 1000;
+
+          let endTime =
+            classroom.endTime ||
+            classmate.timeLineArray[classmate.timeLineArray.length - 1];
+
+          do {
+            if (newTimeArray.length == 0)
+              newTimeArray.push(classroom.startTime);
+            else
+              newTimeArray.push(
+                newTimeArray[newTimeArray.length - 1] + timeSpacing_millis
+              );
+
+            while (
+              classmate.timeLineArray[dataIndex] <
+              newTimeArray[newTimeArray.length - 1] + timeSpacing_millis
+            ) {
+              diagramConcernAdder += classmate.concernDegreeArray[dataIndex];
+              aveCounter += 1;
+
+              //紀錄參與課程時間長
+              if (dataIndex < classmate.timeLineArray.length - 1)
+                attendTimeAddr +=
+                  classmate.timeLineArray[dataIndex + 1] -
+                  classmate.timeLineArray[dataIndex];
+
+              dataIndex += 1;
+            }
+
+            newConcernArray.push(diagramConcernAdder / aveCounter);
+            diagramConcernAdder = 0;
+            aveCounter = 0;
+          } while (
+            newTimeArray[newTimeArray.length - 1] + timeSpacing_millis <
+            endTime
+          );
+
+          let timeStringFormat = timeSpacing < 60 ? "hh:mm:ss" : "hh:mm";
+          for (let i = 0; i < newTimeArray.length; i++) {
+            newTimeArray[i] = ConvertUNIXTimeToTimeString(
+              timeStringFormat,
+              newTimeArray[i]
+            );
+          }
+
+          let attendTimePercentage =
+            Math.floor(
+              (attendTimeAddr / (endTime - classroom.startTime)) * 100
+            ) + "%";
+
+          result.push({
+            studentName: classmate.studentName,
+            studentGoogleName: classmate.studentGoogleName,
+            studentID: classmate.studentID,
+            aveConcern: aveConcern,
+            concernPercentage: concernPercentage,
+            bestLasted: bestLastedString,
+            attendTimePercentage: attendTimePercentage,
+            timeLineArray: newTimeArray,
+            concernDegreeArray: newConcernArray,
+          });
         });
-      });
 
-      //將學生依照學號排序
-      result = SortClassmateDataByID(result);
+        //將學生依照學號排序
+        result = SortClassmateDataByID(result);
 
-      res.status(200).send(result);
+        return res.status(200).send(result);
+      } else {
+        return res.status(403).send("此教室尚無學生資料");
+      }
     } else {
-      res.status(403).send("此教室尚無學生資料");
+      return res.status(404).send("尚無此教室");
     }
-  } else {
-    res.status(404).send("尚無此教室");
   }
-});
+);
 
 function SortClassmateDataByID(classmateDataArray) {
   for (let i = 0; i < classmateDataArray.length - 1; i++) {

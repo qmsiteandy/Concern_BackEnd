@@ -1,20 +1,21 @@
 const express = require("express");
+const router = express.Router();
 const Teacher = require("../models/teacherModel");
 const Course = require("../models/courseModel");
 const Classroom = require("../models/classroomModel");
-const router = express.Router();
-const { response } = require("express");
 
-router.post("/getCourseData", async (req, res, next) => {
-  const { courseDataID } = req.body;
+// 取得課程資訊
+router.post("/getCourseData/:courseDataID", async (req, res, next) => {
+  const { courseDataID } = req.params;
   const course = await Course.findById(courseDataID);
   if (course) {
-    res.status(200).send({ course });
+    return res.status(200).send({ course });
   } else {
-    res.status(404).send("尚無此堂課程");
+    return res.status(404).send("尚無此堂課程");
   }
 });
 
+// 新課程
 router.post("/addCourse", async (req, res, next) => {
   const { teacherDataID, courseName } = req.body;
 
@@ -26,7 +27,7 @@ router.post("/addCourse", async (req, res, next) => {
     });
 
     if (courseExisted) {
-      res.status(403).send("此課程已存在");
+      return res.status(403).send("此課程已存在");
     } else {
       const newCourse = new Course({
         teacherName: teacher.teacherName,
@@ -41,19 +42,20 @@ router.post("/addCourse", async (req, res, next) => {
       });
       const uploadedTeacher = await teacher.save();
 
-      res.status(201).send({
+      return res.status(201).send({
         teacherName: uploadedTeacher.teacherName,
         teacherID: uploadedTeacher.teacherID,
         courses: uploadedTeacher.courses,
       });
     }
   } else {
-    res.status(404).send("尚無此位老師");
+    return res.status(404).send("尚無此位老師");
   }
 });
 
-router.post("/getTotalRollcallStatus", async (req, res, next) => {
-  const { courseDataID } = req.body;
+// 取得該課程每一週的點名狀況
+router.get("/getTotalRollcallStatus/:courseDataID", async (req, res, next) => {
+  const { courseDataID } = req.params;
   const course = await Course.findById(courseDataID);
   if (course) {
     let sign_attend = 1, //出席
@@ -136,14 +138,15 @@ router.post("/getTotalRollcallStatus", async (req, res, next) => {
       }
     }
 
-    res.status(200).send(result);
+    return res.status(200).send(result);
   } else {
-    res.status(404).send("尚無此課程");
+    return res.status(404).send("尚無此課程");
   }
 });
 
 //#region ==========課程週設定部分==========
 
+// 將已開啟的classroom資料連結至courseData
 router.post("/linkClassroomToCourseWeek", async (req, res, next) => {
   const { courseDataID, classroomDataID } = req.body;
   const course = await Course.findById(courseDataID);
@@ -194,7 +197,7 @@ router.post("/linkClassroomToCourseWeek", async (req, res, next) => {
         classroom.courseDataID = course._id;
         const uploadedClassroom = await classroom.save();
 
-        res.status(201).send({
+        return res.status(201).send({
           courseName: uploadedCourse.courseName,
           weekName:
             uploadedCourse.courseWeeks[uploadedCourse.courseWeeks.length - 1]
@@ -210,91 +213,42 @@ router.post("/linkClassroomToCourseWeek", async (req, res, next) => {
           );
       }
     } else {
-      res.status(403).send("尚無此教室");
+      return res.status(403).send("尚無此教室");
     }
   } else {
-    res.status(404).send("尚無此堂課程");
+    return res.status(404).send("尚無此堂課程");
   }
 });
 
-router.delete("/deleteOneCourseWeek", async (req, res, next) => {
-  const { courseDataID, courseWeekIndex } = req.body;
+router.delete("/deleteOneCourseWeek/:courseDataID", async (req, res, next) => {
+  const { courseDataID } = req.params;
+  const { courseWeekIndex } = req.query;
+
   const course = await Course.findById(courseDataID);
   if (course) {
     if (courseWeekIndex != null) {
       //未完成，刪除指定classroom Data
       course.courseWeeks.splice(courseWeekIndex, 1);
     } else {
-      res.status(403).send("請指定courseWeekIndex");
+      return res.status(403).send("請指定courseWeekIndex");
     }
 
     const uploadedCourse = await course.save();
-    res.status(200).send(uploadedCourse.courseWeeks);
+    return res.status(200).send(uploadedCourse.courseWeeks);
   } else {
-    res.status(404).send("尚無此堂課程");
+    return res.status(404).send("尚無此堂課程");
   }
 });
-
-router.delete("/deleteAllCourseWeeks", async (req, res, next) => {
-  const { courseDataID } = req.body;
-  const course = await Course.findById(courseDataID);
-  if (course) {
-    course.courseWeeks.forEach((element) => {
-      //未完成，刪除classroom Data
-    });
-
-    course.courseWeeks = [];
-    const uploadedCourse = await course.save();
-
-    res.status(200).send(uploadedCourse.courseWeeks);
-  } else {
-    res.status(404).send("尚無此堂課程");
-  }
-});
-
-// router.post(
-//   "/editOneCourseWeek",
-//    (async (req, res, next) => {
-//     const { courseDataID, courseWeekIndex, weekName, classroomMeetID } = req.body;
-//     const course = await Course.findById(courseDataID);
-//     if (course) {
-//       //確認更改後學號是否重複
-//       if (weekName) {
-//         //確認更改後學號是否重複
-//         let weekNameExisted = false;
-//         for (let i = 0; i < course.courseWeeks.length; i++) {
-//           if ( i != courseWeekIndex && course.courseWeeks[i].weekName == weekName) {
-//             weekNameExisted = true;
-//           }
-//         }
-//         if (weekNameExisted == true) {
-//           res.send("此課程週名已存在");
-//         }
-//       }
-
-//       //取代資料。注意，無法直接設定course.courseWeeks[courseWeekIndex]內的物件，必須取代一整個Object
-//       const newDate = {
-//         weekName: weekName || course.courseWeeks[courseWeekIndex].weekName,
-//         classroomMeetID: classroomMeetID || course.courseWeeks[courseWeekIndex].classroomMeetID
-//       }
-//       course.courseWeeks.splice(courseWeekIndex, 1, newDate);
-
-//       const uploadedCourse = await course.save();
-//       res.send(uploadedCourse.courseWeeks);
-
-//     } else {
-//       res.send("尚無此堂課程");
-//     }
-//   })
-// );
 
 //#endregion==========課程週設定部分==========
 
 //#region ==========學生名單設定部分==========
 
 //用來自動允許學生加入google meet
-router.post("/checkStudentInList", async (req, res, next) => {
-  const { courseDataID, studentGoogleName } = req.body;
+router.get("/checkStudentInList/:courseDataID", async (req, res, next) => {
+  const { courseDataID } = req.body;
+  const { studentGoogleName } = req.query;
+
   const course = await Course.findById(courseDataID);
   if (course) {
     //確認更改後學號是否重複
@@ -304,24 +258,27 @@ router.post("/checkStudentInList", async (req, res, next) => {
         studentInList = true;
       }
     }
-    res.status(200).send(studentInList);
+    return res.status(200).send(studentInList);
   } else {
-    res.status(404).send("尚無此堂課程");
+    return res.status(404).send("尚無此堂課程");
   }
 });
 
-router.post("/getClassmatesList", async (req, res, next) => {
-  const { courseDataID } = req.body;
+// 取得名單
+router.get("/classmates/:courseDataID", async (req, res, next) => {
+  const { courseDataID } = req.params;
   const course = await Course.findById(courseDataID);
   if (course) {
-    res.status(200).send(course.classmates);
+    return res.status(200).send(course.classmates);
   } else {
-    res.status(404).send("尚無此堂課程");
+    return res.status(404).send("尚無此堂課程");
   }
 });
 
-router.post("/addStudent", async (req, res, next) => {
-  const { courseDataID, studentName, studentGoogleName, studentID } = req.body;
+// 新增學生名單
+router.post("/addStudent/:courseDataID", async (req, res, next) => {
+  const { courseDataID } = req.params;
+  const { studentName, studentGoogleName, studentID } = req.body;
   const course = await Course.findById(courseDataID);
   if (course) {
     let studentExisted = false;
@@ -329,7 +286,7 @@ router.post("/addStudent", async (req, res, next) => {
       if (element.studentID == studentID) studentExisted = true;
     });
 
-    if (studentExisted == true) res.status(403).send("此學號已在名單中");
+    if (studentExisted == true) return res.status(403).send("此學號已在名單中");
     else {
       course.classmates.push({
         studentName: studentName,
@@ -340,15 +297,17 @@ router.post("/addStudent", async (req, res, next) => {
       course.classmates = ClassmatesSorting(course.classmates);
 
       const uploadedCourse = await course.save();
-      res.status(201).send(uploadedCourse.classmates);
+      return res.status(201).send(uploadedCourse.classmates);
     }
   } else {
-    res.status(404).send("尚無此堂課程");
+    return res.status(404).send("尚無此堂課程");
   }
 });
 
-router.post("/addMultipleStudents", async (req, res, next) => {
-  const { courseDataID, studentsDataArray } = req.body;
+// 批量新增學生
+router.post("/addMultipleStudents/:courseDataID", async (req, res, next) => {
+  const { courseDataID } = req.params;
+  const { studentsDataArray } = req.body;
   const course = await Course.findById(courseDataID);
   if (course) {
     let updateClassmates = course.classmates;
@@ -380,23 +339,19 @@ router.post("/addMultipleStudents", async (req, res, next) => {
     course.classmates = updateClassmates;
     const uploadedCourse = await course.save();
 
-    res.status(201).send({
+    return res.status(201).send({
       updatedClassmates: uploadedCourse.classmates,
       addFailList: addFailList,
     });
   } else {
-    res.status(404).send("尚無此堂課程");
+    return res.status(404).send("尚無此堂課程");
   }
 });
 
-router.put("/editOneStudent", async (req, res, next) => {
-  const {
-    courseDataID,
-    studentIndex,
-    studentName,
-    studentGoogleName,
-    studentID,
-  } = req.body;
+// 修改一位學生
+router.put("/editOneStudent/:courseDataID", async (req, res, next) => {
+  const { courseDataID } = req.params;
+  const { studentIndex, studentName, studentGoogleName, studentID } = req.body;
   const course = await Course.findById(courseDataID);
   if (course) {
     //確認更改後學號是否重複
@@ -408,7 +363,7 @@ router.put("/editOneStudent", async (req, res, next) => {
     }
 
     if (studentIDExisted == true) {
-      res.status(403).send("此學號已存在");
+      return res.status(403).send("此學號已存在");
     } else {
       //取代資料。注意，無法直接設定course.classmates[studentIndex]內的物件，必須取代一整個Object
       const newDate = {
@@ -422,15 +377,17 @@ router.put("/editOneStudent", async (req, res, next) => {
       course.classmates = ClassmatesSorting(course.classmates);
 
       const uploadedCourse = await course.save();
-      res.status(201).send(uploadedCourse.classmates);
+      return res.status(201).send(uploadedCourse.classmates);
     }
   } else {
-    res.status(404).send("尚無此堂課程");
+    return res.status(404).send("尚無此堂課程");
   }
 });
 
-router.delete("/deleteOneStudent", async (req, res, next) => {
-  const { courseDataID, studentID } = req.body;
+// 刪除一位學生
+router.delete("/deleteOneStudent/:courseDataID", async (req, res, next) => {
+  const { courseDataID } = req.params;
+  const { studentID } = req.query;
   const course = await Course.findById(courseDataID);
   if (course) {
     let studentIndex = null;
@@ -440,25 +397,26 @@ router.delete("/deleteOneStudent", async (req, res, next) => {
     if (studentIndex != null) {
       course.classmates.splice(studentIndex, 1);
     } else {
-      res.status(403).send("此學號不在名單中");
+      return res.status(403).send("此學號不在名單中");
     }
 
     const uploadedCourse = await course.save();
-    res.status(201).send(uploadedCourse.classmates);
+    return res.status(201).send(uploadedCourse.classmates);
   } else {
-    res.status(404).send("尚無此堂課程");
+    return res.status(404).send("尚無此堂課程");
   }
 });
 
-router.delete("/deleteAllStudents", async (req, res, next) => {
-  const { courseDataID } = req.body;
+// 刪除全部學生名單
+router.delete("/deleteAllStudents/:courseDataID", async (req, res, next) => {
+  const { courseDataID } = req.params;
   const course = await Course.findById(courseDataID);
   if (course) {
     course.classmates = [];
     const uploadedCourse = await course.save();
-    res.status(201).send(uploadedCourse.classmates);
+    return res.status(201).send(uploadedCourse.classmates);
   } else {
-    res.status(404).send("尚無此堂課程");
+    return res.status(404).send("尚無此堂課程");
   }
 });
 

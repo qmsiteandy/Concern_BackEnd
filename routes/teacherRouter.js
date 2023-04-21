@@ -1,27 +1,26 @@
 const express = require("express");
+const router = express.Router();
 const Teacher = require("../models/teacherModel");
 const Course = require("../models/courseModel");
 const Classroom = require("../models/classroomModel");
-const router = express.Router();
 
-// 設定專注程度閾值，0.8專心、0.5普通
-const concernLimit0 = 0.5,
-  concernLimit1 = 0.8;
-
-router.post("/getTeacherData", async (req, res, next) => {
-  const { teacherDataID } = req.body;
-  const teacher = await Teacher.findById(teacherDataID);
+// 取得教師資訊
+router.get("/getTeacherData/:id", async (req, res, next) => {
+  const { id } = req.params;
+  const teacher = await Teacher.findById(id);
   if (teacher) {
-    res.status(200).send({ teacher });
+    return res.status(200).send({ teacher });
   } else {
-    res.status(404).send("尚無此位教師");
+    return res.status(404).send("尚無此位教師");
   }
 });
 
 //#region ==========課程部分==========
 
-router.post("/openClassroom", async (req, res, next) => {
-  const { teacherName, classroomMeetID } = req.body;
+// 開啟教室 (新增教室資料)
+router.post("/openClassroom/:classroomMeetID", async (req, res, next) => {
+  const { teacherName } = req.body;
+  const { classroomMeetID } = req.params;
 
   newTime = new Date();
   let date =
@@ -63,27 +62,29 @@ router.post("/openClassroom", async (req, res, next) => {
   });
 
   const updatedClassroom = await newClassroom.save();
-  res.status(201).send({ classroomDataID: updatedClassroom._id });
+  return res.status(201).send({ classroomDataID: updatedClassroom._id });
 });
 
-router.post("/closeClassroom", async (req, res, next) => {
-  const { classroomDataID } = req.body;
+// 關閉教室
+router.get("/closeClassroom/:classroomDataID", async (req, res, next) => {
+  const { classroomDataID } = req.params;
 
   const classroom = await Classroom.findById(classroomDataID);
   if (classroom) {
     if (classroom.isLinkToCourse == false) {
-      //未完成，Classroom.remove({"_id" : ObjectId(classroomDataID)});
-      res.status(200).send("教室刪除");
+      //可再加入刪除功能
+      return res.status(200).send("教室刪除");
     } else {
-      res.status(200).send("教室關閉");
+      return res.status(200).send("教室關閉");
     }
   } else {
-    res.status(404).send("無此教室資訊");
+    return res.status(404).send("無此教室資訊");
   }
 });
 
-router.post("/startClass", async (req, res, next) => {
-  const { classroomDataID } = req.body;
+// 課程開始
+router.post("/startClass/:classroomDataID", async (req, res, next) => {
+  const { classroomDataID } = req.params;
 
   const classroom = await Classroom.findById(classroomDataID);
   if (classroom) {
@@ -92,28 +93,30 @@ router.post("/startClass", async (req, res, next) => {
 
     const updatedClassroom = await classroom.save();
 
-    res.status(200).send("課程開始");
+    return res.status(200).send("課程開始");
   } else {
-    res.status(404).send("無此教室資訊");
+    return res.status(404).send("無此教室資訊");
   }
 });
 
-router.post("/endClass", async (req, res, next) => {
-  const { classroomDataID } = req.body;
+// 課程結束
+router.post("/endClass:classroomDataID", async (req, res, next) => {
+  const { classroomDataID } = req.params;
 
   const classroom = await Classroom.findById(classroomDataID);
   if (classroom) {
     (classroom.endTime = Date.now()), //以UNIX時間格式儲存
       (classroom.isClassing = false);
     const updatedClassroom = await classroom.save();
-    res.status(200).send("課程結束");
+    return res.status(200).send("課程結束");
   } else {
-    res.status(404).send("無此教室資訊");
+    return res.status(404).send("無此教室資訊");
   }
 });
 
-router.post("/startRest", async (req, res, next) => {
-  const { classroomDataID } = req.body;
+// 進入課間休息
+router.post("/startRest/:classroomDataID", async (req, res, next) => {
+  const { classroomDataID } = req.params;
 
   const classroom = await Classroom.findById(classroomDataID);
   if (classroom) {
@@ -126,17 +129,18 @@ router.post("/startRest", async (req, res, next) => {
         });
         await classroom.save();
       }
-      res.status(200).send("下課休息時間");
+      return res.status(200).send("下課休息時間");
     } else {
-      res.status(403).send("課堂尚未開始");
+      return res.status(403).send("課堂尚未開始");
     }
   } else {
-    res.status(404).send("無此教室資訊");
+    return res.status(404).send("無此教室資訊");
   }
 });
 
-router.post("/endRest", async (req, res, next) => {
-  const { classroomDataID } = req.body;
+// 課間休息結束
+router.post("/endRest/:classroomDataID", async (req, res, next) => {
+  const { classroomDataID } = req.params;
 
   const classroom = await Classroom.findById(classroomDataID);
   if (classroom) {
@@ -149,20 +153,21 @@ router.post("/endRest", async (req, res, next) => {
         classroom.restTime.splice(classroom.restTime.length - 1, 1, updateRest);
 
         const uploadedClassroom = await classroom.save();
-        res.status(200).send("下課時間結束");
+        return res.status(200).send("下課時間結束");
       } else {
-        res.status(400).send("非下課時間");
+        return res.status(400).send("非下課時間");
       }
     } else {
-      res.status(403).send("課堂尚未開始");
+      return res.status(403).send("課堂尚未開始");
     }
   } else {
-    res.status(404).send("無此教室資訊");
+    return res.status(404).send("無此教室資訊");
   }
 });
 
-router.post("/getAllNewData", async (req, res, next) => {
-  const { classroomDataID } = req.body;
+// 取的所有學生最新的專注數值
+router.post("/getAllNewData/:classroomDataID", async (req, res, next) => {
+  const { classroomDataID } = req.params;
   const classroom = await Classroom.findById(classroomDataID);
   if (classroom) {
     let dataList = new Array();
@@ -174,9 +179,9 @@ router.post("/getAllNewData", async (req, res, next) => {
         newConcernDegree: classmate.newConcernDegree,
       });
     });
-    res.status(200).send(dataList);
+    return res.status(200).send(dataList);
   } else {
-    res.status(404).send("無此教室資訊");
+    return res.status(404).send("無此教室資訊");
   }
 });
 
@@ -184,11 +189,12 @@ router.post("/getAllNewData", async (req, res, next) => {
 
 //#region ==========進階功能==========
 
+// 教師註冊並直接登入後台 (建立 Teacher Document)
 router.post("/teacherRegisterLogin", async (req, res, next) => {
   const { teacherName, teacherID } = req.body;
 
   if (teacherName == "" || teacherID == "")
-    res.status(400).send("缺少老師姓名或ID");
+    return res.status(400).send("缺少老師姓名或ID");
   else {
     const teacher = await Teacher.findOne({
       $and: [{ teacherName: teacherName }, { teacherID: teacherID }],
@@ -223,7 +229,7 @@ router.post("/teacherRegisterLogin", async (req, res, next) => {
         }
       }
 
-      res.status(201).send(result);
+      return res.status(201).send(result);
     } else {
       const newTeacher = new Teacher({
         teacherName: teacherName,
@@ -236,7 +242,7 @@ router.post("/teacherRegisterLogin", async (req, res, next) => {
       result.teacherName = uploadedTeacher.teacherName;
       result.teacherID = uploadedTeacher.teacherID;
 
-      res.status(201).send(result);
+      return res.status(201).send(result);
     }
   }
 });

@@ -1,23 +1,33 @@
 const express = require("express");
-const Classroom = require("../models/classroomModel");
 const router = express.Router();
+const Classroom = require("../models/classroomModel");
 
 // 設定專注程度閾值，0.8專心、0.5普通
 const concernLimit0 = 0.5,
   concernLimit1 = 0.8;
 
-router.post("/enterClassroom", async (req, res, next) => {
-  const { classroomMeetID, studentName, studentGoogleName, studentID } =
-    req.body;
+// 學生加入教室
+router.post("/enterClassroom/:classroomMeetID", async (req, res, next) => {
+  const { studentName, studentGoogleName, studentID } = req.body;
+  const { classroomMeetID } = req.params;
 
+  // 找尋 classroom 資料是否存在
+  // 若資料庫中有重複的教室編號，只會找到的那間資料
   const classroom = await Classroom.findOne({
     classroomMeetID: classroomMeetID,
-  }).sort({ $natural: -1 }); //尋找最後一個
+  }).sort({ $natural: -1 });
 
-  if (classroom) {
+  // 如果找不到此教室編號，代表教室尚未開啟
+  if (!classroom) {
+    return res.status(404).send("此教室尚未開啟");
+  }
+  // 此教室已開啟則加入
+  else {
+    // 尋找此學生是否已在教室資料中(有可能是重新連線進入教室)
     let indexInList = classroom.classmates.findIndex(
       (element) => element.studentID == studentID
     );
+
     //此學生尚未在名單中，需創建
     if (indexInList == -1) {
       const newClassmate = {
@@ -30,85 +40,66 @@ router.post("/enterClassroom", async (req, res, next) => {
         concernDegreeArray: new Array(),
         timeLineArray: new Array(),
       };
+      // 將新學生資料存入 classroom 的 classmates 陣列中
       classroom.classmates.push(newClassmate);
       const uploadedClassroom = await classroom.save();
-      res.status(201).send({
+
+      // 回傳教室資料 id 及學生資料的索引值，以加速後續資料搜索
+      return res.status(201).send({
         classroomDataID: classroom._id,
         indexInList: uploadedClassroom.classmates.length - 1,
       });
-      //此學生已在名單中，不需再創建
-    } else {
-      res.status(201).send({
+    }
+    //此學生已在名單中，不需再創建
+    else {
+      return res.status(201).send({
         classroomDataID: classroom._id,
         indexInList: indexInList,
       });
     }
-  } else {
-    res.status(404).send("此教室尚未開啟");
   }
 });
 
-router.put("/createFakeConcernData", async (req, res, next) => {
-  const { classroomDataID, indexInList, dataCount } = req.body;
-  const classroom = await Classroom.findById(classroomDataID);
-
-  if (classroom) {
-    if (classroom.isClassing == false) res.status(400).send("課程尚未開始");
-    else if (classroom.isResting == true) res.status(401).send("下課休息時間");
-    else {
-      let updateClassmate = classroom.classmates[indexInList];
-      if (updateClassmate) {
-        let newTime = classroom.startTime;
-        for (let i = 0; i < dataCount; i++) {
-          newTime += 250;
-          updateClassmate.concernDegreeArray.push(Math.random() * 0.5 + 0.6);
-          updateClassmate.timeLineArray.push(newTime); //以UNIX時間格式儲存
-        }
-
-        classroom.classmates.splice(indexInList, 1, updateClassmate);
-
-        const updatedClassroom = await classroom.save();
-        res.status(200).send("上傳成功");
-      } else {
-        res.status(403).send("無此學生");
-      }
-    }
-  } else {
-    res.status(404).send("無此課堂教室");
-  }
-});
-
-router.put("/upload", async (req, res, next) => {
+// 上傳專注數值，並透過 res 傳送現在的課程狀態(進行中/休息中)
+router.post("/upload", async (req, res, next) => {
   const { classroomDataID, indexInList, concernDegree } = req.body;
   const classroom = await Classroom.findById(classroomDataID);
 
   const uploadDelay = 1000; //至少1秒後才能再次紀錄數據，以避免數據過多
 
   if (classroom) {
-    if (classroom.isClassing == false) res.status(400).send("課程尚未開始");
-    else if (classroom.isResting == true) res.status(401).send("下課休息時間");
+    // 判斷是否正在課程中
+    if (classroom.isClassing == false)
+      return res.status(400).send("課程尚未開始");
+    // 判斷是否休息中
+    else if (classroom.isResting == true)
+      return res.status(401).send("下課休息時間");
+    // 課程進行中，允許上傳專注資訊
     else {
+      // 抓出此學生在 classmates 陣列中現有資料
       let updateClassmate = classroom.classmates[indexInList];
       if (updateClassmate) {
+        // 判斷是否超過 uploadDelay 的時間閾值，以此必免過於頻繁的儲存資料
         if (Date.now() - updateClassmate.lastedUploadTime > uploadDelay) {
           updateClassmate.newConcernDegree = parseFloat(concernDegree);
           updateClassmate.lastedUploadTime = Date.now();
           updateClassmate.concernDegreeArray.push(parseFloat(concernDegree));
           updateClassmate.timeLineArray.push(Date.now()); //以UNIX時間格式儲存
-
+          // 修改此學生在 classmates 中的資料
           classroom.classmates.splice(indexInList, 1, updateClassmate);
           const updatedClassroom = await classroom.save();
         }
-        res.status(200).send("上傳成功");
+        return res.status(200).send("上傳成功");
       } else {
-        res.status(403).send("無此學生");
+        return res.status(403).send("無此學生");
       }
     }
   } else {
-    res.status(404).send("無此課堂教室");
+    return res.status(404).send("無此課堂教室");
   }
 });
 
+// 進行點名
 router.post("/rollcall", async (req, res, next) => {
   const { classroomDataID, studentID, rollcallIndex } = req.body;
   const classroom = await Classroom.findById(classroomDataID);
@@ -126,20 +117,29 @@ router.post("/rollcall", async (req, res, next) => {
         classroom.classmates.splice(indexInList, 1, updateClassmate);
         const updatedClassroom = await classroom.save();
 
-        res.status(200).send("第" + (rollcallIndex + 1) + "次點名簽到完成");
+        return res
+          .status(200)
+          .send("第" + (rollcallIndex + 1) + "次點名簽到完成");
       } else {
-        res.status(403).send("第" + (rollcallIndex + 1) + "次點名尚未開始");
+        return res
+          .status(403)
+          .send("第" + (rollcallIndex + 1) + "次點名尚未開始");
       }
     } else {
-      res.status(402).send("教室無此學生資料");
+      return res.status(402).send("教室無此學生資料");
     }
   } else {
-    res.status(404).send("無此課堂教室");
+    return res.status(404).send("無此課堂教室");
   }
 });
 
-router.post("/getPersonConcernDiagram", async (req, res, next) => {
-  const { classroomDataID, studentID, timeSpacing } = req.body;
+// 課後取得學生專注分析
+router.get("/getPersonConcernDiagram", async (req, res, next) => {
+  const { classroomDataID, studentID } = req.query;
+  const timeSpacing = req.query.timeSpacing | 1;
+
+  if (!classroomDataID | !studentID) return res.status(400).send("缺少參數");
+
   const classroom = await Classroom.findById(classroomDataID);
   if (classroom) {
     let indexInList = classroom.classmates.findIndex((element) => {
@@ -268,7 +268,7 @@ router.post("/getPersonConcernDiagram", async (req, res, next) => {
         Math.floor((attendTimeAddr / (endTime - classroom.startTime)) * 100) +
         "%";
 
-      res.status(200).send({
+      return res.status(200).send({
         studentName: classmate.studentName,
         studentID: classmate.studentID,
         aveConcern: aveConcern,
@@ -279,10 +279,43 @@ router.post("/getPersonConcernDiagram", async (req, res, next) => {
         concernDegreeArray: newConcernArray,
       });
     } else {
-      res.status(403).send("教室無此學生資料");
+      return res.status(403).send("教室無此學生資料");
     }
   } else {
-    res.status(404).send("無此課堂教室");
+    return res.status(404).send("無此課堂教室");
+  }
+});
+
+// 建立學生專注數值假資料 (test)
+router.post("/createFakeConcernData", async (req, res, next) => {
+  const { classroomDataID, indexInList, dataCount } = req.body;
+  const classroom = await Classroom.findById(classroomDataID);
+
+  if (classroom) {
+    if (classroom.isClassing == false)
+      return res.status(400).send("課程尚未開始");
+    else if (classroom.isResting == true)
+      return res.status(401).send("下課休息時間");
+    else {
+      let updateClassmate = classroom.classmates[indexInList];
+      if (updateClassmate) {
+        let newTime = classroom.startTime;
+        for (let i = 0; i < dataCount; i++) {
+          newTime += 250;
+          updateClassmate.concernDegreeArray.push(Math.random() * 0.5 + 0.6);
+          updateClassmate.timeLineArray.push(newTime); //以UNIX時間格式儲存
+        }
+
+        classroom.classmates.splice(indexInList, 1, updateClassmate);
+
+        const updatedClassroom = await classroom.save();
+        return res.status(200).send("上傳成功");
+      } else {
+        return res.status(403).send("無此學生");
+      }
+    }
+  } else {
+    return res.status(404).send("無此課堂教室");
   }
 });
 

@@ -49,11 +49,11 @@ app.get("/", (req, res, next) => {
 // Error Handler
 app.use((err, req, res, next) => {
   console.log(err);
-  res.status(500).send({ error: "Something is wrong. Error: " + err });
+  return res.status(500).send({ error: "Something is wrong. Error: " + err });
 });
 
 //設定監聽PORT
 const port = process.env.PORT || 5000;
 server.listen(port, () => {
-  console.log(`Server is running on PORT=${port}`);
+  console.log(`Server is running on PORT ${port}`);
 });
