@@ -5,7 +5,7 @@ const Course = require("../models/courseModel");
 const Classroom = require("../models/classroomModel");
 
 // 取得課程資訊
-router.post("/getCourseData/:courseDataID", async (req, res, next) => {
+router.get("/getCourseData/:courseDataID", async (req, res, next) => {
   const { courseDataID } = req.params;
   const course = await Course.findById(courseDataID);
   if (course) {
@@ -246,7 +246,7 @@ router.delete("/deleteOneCourseWeek/:courseDataID", async (req, res, next) => {
 
 //用來自動允許學生加入google meet
 router.get("/checkStudentInList/:courseDataID", async (req, res, next) => {
-  const { courseDataID } = req.body;
+  const { courseDataID } = req.params;
   const { studentGoogleName } = req.query;
 
   const course = await Course.findById(courseDataID);

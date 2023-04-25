@@ -83,7 +83,7 @@ router.get("/closeClassroom/:classroomDataID", async (req, res, next) => {
 });
 
 // 課程開始
-router.post("/startClass/:classroomDataID", async (req, res, next) => {
+router.get("/startClass/:classroomDataID", async (req, res, next) => {
   const { classroomDataID } = req.params;
 
   const classroom = await Classroom.findById(classroomDataID);
@@ -100,7 +100,7 @@ router.post("/startClass/:classroomDataID", async (req, res, next) => {
 });
 
 // 課程結束
-router.post("/endClass:classroomDataID", async (req, res, next) => {
+router.get("/endClass:classroomDataID", async (req, res, next) => {
   const { classroomDataID } = req.params;
 
   const classroom = await Classroom.findById(classroomDataID);
@@ -115,7 +115,7 @@ router.post("/endClass:classroomDataID", async (req, res, next) => {
 });
 
 // 進入課間休息
-router.post("/startRest/:classroomDataID", async (req, res, next) => {
+router.get("/startRest/:classroomDataID", async (req, res, next) => {
   const { classroomDataID } = req.params;
 
   const classroom = await Classroom.findById(classroomDataID);
@@ -139,7 +139,7 @@ router.post("/startRest/:classroomDataID", async (req, res, next) => {
 });
 
 // 課間休息結束
-router.post("/endRest/:classroomDataID", async (req, res, next) => {
+router.get("/endRest/:classroomDataID", async (req, res, next) => {
   const { classroomDataID } = req.params;
 
   const classroom = await Classroom.findById(classroomDataID);
@@ -166,7 +166,7 @@ router.post("/endRest/:classroomDataID", async (req, res, next) => {
 });
 
 // 取的所有學生最新的專注數值
-router.post("/getAllNewData/:classroomDataID", async (req, res, next) => {
+router.get("/getAllNewData/:classroomDataID", async (req, res, next) => {
   const { classroomDataID } = req.params;
   const classroom = await Classroom.findById(classroomDataID);
   if (classroom) {
