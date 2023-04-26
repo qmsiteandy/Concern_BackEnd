@@ -43,14 +43,17 @@ https://app.swaggerhub.com/apis/qmsiteandy/Concern-BackEnd-202106/1.0.0
 
 ### Classroom 資料
 本系統最基礎的功能只需要 classroom 資料就能達成，用來傳輸紀錄學生專注資訊、紀錄上課下課及課間休息時間等。另外進階功能如點名，也是記錄在 Classroom 資料中。
+
 ![資料庫架構-classroom](https://i.imgur.com/LSxHIf2.png)
 
 ### Teacher 資料
-記錄教師資訊，以及所屬的課程清單。
+記錄教師資訊，以及所屬的課程清單。  
+
 ![資料庫架構-teacher](https://i.imgur.com/HPELQK9.png)
 
 ### Course 資料
 記錄這個課程中的學生名單、各週課程的 classroom 資料編號、以及各週請假的學生名單。  
+
 ![資料庫架構-course](https://i.imgur.com/un3yv3O.png)
 
 <!-- ======================================= -->
@@ -69,6 +72,7 @@ https://app.swaggerhub.com/apis/qmsiteandy/Concern-BackEnd-202106/1.0.0
 <!-- -------- -->
 ## 一、專注度傳輸功能
 在學生端套件中，前端透過 WebCam 視訊鏡頭取的學生人臉圖像，演算出學生專注數值 (詳閱 [這個專案](https://github.com/qmsiteandy/concern-with-facemesh)) 。學生端定期將數值傳至後台 Server 紀錄，而教師端套件則定期抓取全班數值更新資料，並以顏色外框呈現學生專注程度，如圖：
+
 ![教師端畫面](https://i.imgur.com/tknOfEc.png)
 
 ### 學生端上傳專注度
@@ -82,6 +86,7 @@ https://app.swaggerhub.com/apis/qmsiteandy/Concern-BackEnd-202106/1.0.0
 <!-- -------- -->
 ## 二、教室管理
 教師端可以透過套件控制課程狀態，順序為：開啟教室 → 課程開始 → (課間休息 → 休息結束)*N → 課程結束。前端介面展示：
+
 ![](https://i.imgur.com/9gdubCk.png)
 
 ### 開啟教室
@@ -142,6 +147,7 @@ https://app.swaggerhub.com/apis/qmsiteandy/Concern-BackEnd-202106/1.0.0
 並可以透過 query 資料 timeSpacing 來設定圖表的時間軸間隔。
 
 後續由前端繪製圖表，如下圖：
+
 ![](https://i.imgur.com/C3AGppP.png)
 ![](https://i.imgur.com/pRLGbY6.png)
 
@@ -163,6 +169,7 @@ https://app.swaggerhub.com/apis/qmsiteandy/Concern-BackEnd-202106/1.0.0
 學生名單資料會儲存在 Course 資料中的 classmates 陣列中。
 
 前端介面展示：
+
 ![](https://i.imgur.com/2aU1bCT.png)
 
 ### 手動新增/修改/刪除
@@ -178,6 +185,7 @@ https://app.swaggerhub.com/apis/qmsiteandy/Concern-BackEnd-202106/1.0.0
 <!-- -------- -->
 ## 六、點名功能 (進階後臺功能)
 教師呼叫點名功能後，所有該課程學生畫面跳出點名視窗，學生需要在時間內按下點名鍵。點名結束後會在教師後台介面顯示點名結果。
+
 ![](https://i.imgur.com/PRIZDU5.png)
 
 ### 開始點名
@@ -200,6 +208,7 @@ https://app.swaggerhub.com/apis/qmsiteandy/Concern-BackEnd-202106/1.0.0
 <!-- -------- -->
 ## 七、自動允許學生進入 Meet 功能 (進階後臺功能)
 在 Google Meet 線上課程中，通常教師需要手動允許使用者加入會議室。本系統的 Auto-admit 功能可以在使用者加入時，自動比對課程名單並允許學生進入會議室。
+
 ![](https://i.imgur.com/KVOch33.png)
 
 ### 確認學生是否在課程名單中
